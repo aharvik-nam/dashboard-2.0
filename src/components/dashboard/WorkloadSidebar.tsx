@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, Map, Building, Library } from "lucide-react";
+import { Camera, Map, Building, BookOpen } from "lucide-react";
 
 // Cool tones matching the location palette — spatial/geographical
 export const WORKLOAD_COLORS: Record<string, string> = {
@@ -32,7 +32,7 @@ const LOCATION_CARDS = [
   { cat: 'studio'   as const, label: 'Studio & Digitalisering', sub: 'Seksjon Foto',    key: 'studioCount'       as const, color: "#5E88A8", icon: Camera  },
   { cat: 'location' as const, label: 'Ekstern Location',        sub: 'Utenfor huset',   key: 'locationCount'     as const, color: "#5E9E8E", icon: Map     },
   { cat: 'foh'      as const, label: 'Front of House',          sub: 'Nasjonalmuseet',  key: 'frontOfHouseCount' as const, color: "#C09878", icon: Building },
-  { cat: 'nb'       as const, label: 'Til Nasjonalbiblioteket', sub: 'Sendes til NB',   key: 'nbCount'           as const, color: "#7B5EA0", icon: Library  },
+  { cat: 'nb'       as const, label: 'Til Nasjonalbiblioteket', sub: 'Sendes til NB',   key: 'nbCount'           as const, color: "#7B5EA0", icon: BookOpen  },
 ];
 
 export const WorkloadSidebar: React.FC<WorkloadSidebarProps> = ({
