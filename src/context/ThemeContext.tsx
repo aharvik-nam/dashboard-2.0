@@ -91,10 +91,10 @@ export interface ThemeColors {
 }
 
 const DARK_OVERRIDES: Partial<ThemeColors> = {
-  stone50:  "#141210",
-  stone100: "#1c1917",
-  stone200: "#28231e",
-  stone300: "#3a3330",
+  stone50:  "#0e0c0b",  // app background — darkest
+  stone100: "#1a1714",  // card surface — clearly lifted from bg
+  stone200: "#2c2724",  // borders, dividers
+  stone300: "#3d3835",
   stone400: "#5a5450",
   stone500: "#78716c",
   stone600: "#a8a29e",

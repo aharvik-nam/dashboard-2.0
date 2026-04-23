@@ -28,17 +28,17 @@ export const Card: React.FC<CardProps> = ({
 
   const variants = {
     default: `
-      bg-stone-50 border-stone-200
+      bg-stone-100 border-stone-200
       ${shadows[settings?.cardShadow || 'sm']}
     `,
     flat: `
-      bg-stone-100 border-stone-200
+      bg-stone-200 border-stone-200
     `,
     bordered: `
-      bg-stone-50 border-stone-200
+      bg-stone-100 border-stone-200
     `,
     elevated: `
-      bg-stone-50 border-stone-200
+      bg-stone-100 border-stone-200
       ${shadows[settings?.cardShadow || 'md']}
     `
   };

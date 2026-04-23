@@ -85,7 +85,7 @@ export const DashboardJobCard: React.FC<DashboardJobCardProps> = ({
       style={{ borderRadius: cardBorderRadius, borderTop: `3px solid ${deadlineInfo.statusColor || '#2E7D4F'}`, boxShadow: urgencyGlow }}
     >
       <div className="p-3 flex flex-col flex-1 gap-2">
-        <h3 className="text-sm font-serif font-bold leading-tight transition-colors line-clamp-2 text-stone-900 group-hover:text-black">
+        <h3 className="text-sm font-serif font-bold leading-tight transition-colors line-clamp-2 text-stone-900 group-hover:text-stone-950">
           {name}
         </h3>
 

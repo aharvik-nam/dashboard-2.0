@@ -134,7 +134,7 @@ html.dark {
      Uses bg-stone-50 (not bg-white) so it responds to dark mode stone remapping.
      Always pair with a style={{ borderRadius, borderTop }} for per-card tokens. */
   .card-job {
-    @apply overflow-hidden transition-all text-left flex flex-col h-full relative bg-stone-50 border border-stone-200 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-inset shadow-sm cursor-pointer;
+    @apply overflow-hidden transition-all text-left flex flex-col h-full relative bg-stone-100 border border-stone-200 hover:bg-stone-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-inset shadow-sm cursor-pointer;
   }
 }
 

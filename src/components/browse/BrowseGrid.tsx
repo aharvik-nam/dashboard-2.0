@@ -94,7 +94,7 @@ export const BrowseGrid: React.FC<BrowseGridProps> = ({
               </div>
             )}
             <div className="p-3 flex flex-col flex-1 gap-2">
-              <h3 className="text-sm font-serif font-bold leading-tight transition-colors line-clamp-2 text-stone-900 group-hover:text-black">
+              <h3 className="text-sm font-serif font-bold leading-tight transition-colors line-clamp-2 text-stone-900 group-hover:text-stone-950">
                 {name}
               </h3>
 
