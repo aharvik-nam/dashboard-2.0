@@ -13,7 +13,7 @@ import { getAIRecommendationForJob } from "../services/geminiService";
 import { DateFilter } from "../hooks/useJobFilters";
 import { useTheme } from "../context/ThemeContext";
 import { useJobData } from "../context/JobDataContext";
-import { Search, RefreshCw, Clock, PlusCircle, TrendingUp, Users, X } from "lucide-react";
+import { Search, RefreshCw, Clock, PlusCircle, TrendingUp, Users, X, Calendar as CalendarIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNMData } from "../hooks/useNMData";
 import { useDiMuData } from "../hooks/useDiMuData";
