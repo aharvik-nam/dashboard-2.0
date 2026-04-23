@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { Save, RotateCcw, Palette, Type, Layout, CreditCard, User, Lock, ShieldCheck, AlertCircle } from "lucide-react";
 import { SectionHeader } from "./ui/SectionHeader";
+import { Card } from "./ui/Card";
 import { PhotographerSettingsTab } from "./PhotographerSettingsTab";
 import { ColorsTab } from "./settings/ColorsTab";
 import { CardsTab } from "./settings/CardsTab";
