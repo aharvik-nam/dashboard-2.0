@@ -86,14 +86,14 @@ export const JobTable: React.FC<JobTableProps> = ({
                 role="button"
                 tabIndex={0}
                 aria-label={`Se detaljer for ${job.title}`}
-                className="text-left transition-all group flex flex-col h-full overflow-hidden border border-stone-100 hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-inset cursor-pointer"
+                className="text-left transition-all group flex flex-col h-full overflow-hidden border border-stone-200 hover:bg-stone-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-inset cursor-pointer"
                 style={{ 
                   borderRadius: theme.cardSettings?.cardBorderRadius || '1rem',
                   borderTop: `3px solid ${typeBg}`
                 }}
               >
                 <div className="p-4 flex flex-col flex-1">
-                  <h4 className="font-bold transition-colors truncate mb-3 text-stone-900 group-hover:text-black">
+                  <h4 className="font-bold transition-colors truncate mb-3 text-stone-900 group-hover:text-stone-950">
                     {job.title}
                   </h4>
                   

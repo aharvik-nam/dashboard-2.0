@@ -59,7 +59,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             placeholder="Søk i oppdrag, NMID, lokasjon..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 rounded-lg text-sm focus:outline-none transition-all bg-stone-50 border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-200 shadow-sm"
+            className="w-full pl-10 pr-10 py-2 rounded-lg text-sm focus:outline-none transition-all bg-stone-100 border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-200 shadow-sm"
           />
           {searchTerm && (
             <button
@@ -150,7 +150,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             onClick={() => setLayout("grid")}
             className={`p-1.5 rounded-md transition-all ${
               layout === "grid"
-                ? "bg-stone-50 text-stone-900 shadow-sm"
+                ? "bg-stone-100 text-stone-900 shadow-sm"
                 : "text-stone-500 hover:text-stone-900"
             }`}
             title="Rutenett"
@@ -161,7 +161,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             onClick={() => setLayout("list")}
             className={`p-1.5 rounded-md transition-all ${
               layout === "list"
-                ? "bg-stone-50 text-stone-900 shadow-sm"
+                ? "bg-stone-100 text-stone-900 shadow-sm"
                 : "text-stone-500 hover:text-stone-900"
             }`}
             title="Liste"
