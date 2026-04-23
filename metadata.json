@@ -1,0 +1,5 @@
+{
+  "name": "Fotooppdrag Nasjonalmuseet",
+  "description": "Håndtering av fotooppdrag fra HubSpot for Nasjonalmuseets fotografer, med integrasjon mot Firestore for fotograf-mapping.",
+  "requestFramePermissions": []
+}

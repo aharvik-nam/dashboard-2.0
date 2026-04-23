@@ -1,0 +1,490 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Roboto:wght@300;400;500;700;900&family=Open+Sans:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500&family=Raleway:wght@400&family=Lobster&family=Ubuntu:wght@700&family=Nanum+Gothic:wght@400;700&family=Roboto+Mono:wght@300&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+
+/* ── 1. BASE ─────────────────────────────────────────────────────────────── */
+
+html {
+  font-size: var(--app-font-size-base, 16px);
+}
+
+
+/* ── 2. DESIGN TOKENS ────────────────────────────────────────────────────── */
+/*
+  All tokens reference --app-* variables set at runtime by ThemeContext.tsx.
+  Change any color/font/radius in Settings → they update instantly site-wide.
+  Fallback values (after the comma) are the hard-coded defaults used when
+  ThemeContext hasn't loaded yet.
+*/
+
+@theme {
+  /* Typography */
+  --font-sans: var(--app-font-sans, "Inter", ui-sans-serif, system-ui, sans-serif);
+  --font-serif: var(--app-font-serif, "Playfair Display", serif);
+  --font-mono: var(--app-font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, monospace);
+
+  /* Border radius — all levels derive from a single base value */
+  --radius-sm: calc(var(--app-radius-base, 0.5rem) * 0.5);
+  --radius-md: calc(var(--app-radius-base, 0.5rem) * 0.75);
+  --radius-lg: var(--app-radius-base, 0.5rem);
+  --radius-xl: calc(var(--app-radius-base, 0.5rem) * 1.5);
+  --radius-2xl: calc(var(--app-radius-base, 0.5rem) * 2);
+
+  /* Brand colors */
+  --color-brand-green: var(--app-brand-green, #7CAE7A);
+  --color-brand-internal: var(--app-brand-internal, #7BB2D9);
+  --color-brand-external: var(--app-brand-external, #8B687F);
+
+  /* Deadline status colors */
+  --color-deadline-overdue: var(--app-status-overdue, #F5CAC3);
+  --color-deadline-today: var(--app-status-critical, #F6BD60);
+  --color-deadline-week: var(--app-status-within, #84A59D);
+
+  /* Tag colors */
+  --color-tag-internal: var(--app-tag-internal, #78716c);
+  --color-tag-external: var(--app-tag-external, #292524);
+  --color-tag-default: var(--app-tag-default, #a8a29e);
+
+  /* Stone palette (neutral grayscale) */
+  --color-stone-50:  var(--app-stone-50,  #fafaf9);
+  --color-stone-100: var(--app-stone-100, #f5f5f4);
+  --color-stone-200: var(--app-stone-200, #e7e5e4);
+  --color-stone-300: var(--app-stone-300, #d6d3d1);
+  --color-stone-400: var(--app-stone-400, #a8a29e);
+  --color-stone-500: var(--app-stone-500, #78716c);
+  --color-stone-600: var(--app-stone-600, #57534e);
+  --color-stone-700: var(--app-stone-700, #44403c);
+  --color-stone-800: var(--app-stone-800, #292524);
+  --color-stone-900: var(--app-stone-900, #1c1917);
+  --color-stone-950: var(--app-stone-950, #0c0a09);
+
+  /* Semantic text colors */
+  --color-text-primary:   var(--app-text-color-primary,   #1c1917);
+  --color-text-secondary: var(--app-text-color-secondary, #57534e);
+  --color-text-muted:     var(--app-text-color-muted,     #a8a29e);
+  --color-text-inverted:  var(--app-text-color-inverted,  #fafaf9);
+
+  /* Chrome (header & navigation) */
+  --color-header-bg:     var(--app-header-bg,     #F5F2EE);
+  --color-header-border: var(--app-header-border, #E8E2D9);
+  --color-nav-bg:        var(--app-nav-bg,        rgba(231, 229, 228, 0.5));
+  --color-nav-border:    var(--app-nav-border,    transparent);
+
+  /* Report / statistics accent palette */
+  --color-report-purple: var(--app-report-purple, #534AB7);
+  --color-report-teal:   var(--app-report-teal,   #0F6E56);
+  --color-report-coral:  var(--app-report-coral,  #993C1D);
+  --color-report-amber:  var(--app-report-amber,  #854F0B);
+  --color-report-green:  var(--app-report-green,  #1D9E75);
+  --color-report-blue:   var(--app-report-blue,   #185FA5);
+}
+
+
+/* ── 3. CUSTOM UTILITIES ─────────────────────────────────────────────────── */
+
+@utility brutalist-border {
+  border: 2px solid black;
+  box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+}
+
+@utility brutalist-button {
+  border: 2px solid black;
+  box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+  transition: all 0.1s;
+}
+
+@utility brutalist-button-hover {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
+}
+
+
+/* ── 4. COMPONENT CLASSES ────────────────────────────────────────────────── */
+/*
+  Shared class abstractions for patterns repeated 3+ times across components.
+  Use these in JSX className props instead of copying the full string.
+*/
+
+@layer components {
+  /* Tiny uppercase label — used everywhere for metadata labels */
+  .label-xs {
+    @apply text-[10px] font-bold uppercase tracking-widest;
+  }
+
+  /* Tiny badge pill — used for location/type chips on job cards */
+  .badge-xs {
+    @apply px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest rounded;
+  }
+
+  /* Base job card — shared wrapper for clickable job cards in grid/list views.
+     Always pair with a style={{ borderRadius, borderTop }} for per-card tokens. */
+  .card-job {
+    @apply overflow-hidden transition-all text-left flex flex-col h-full relative bg-white border border-stone-200 hover:bg-stone-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-inset shadow-sm cursor-pointer;
+  }
+}
+
+
+/* ── 5. RICH TEXT (.forum-body) ──────────────────────────────────────────── */
+
+.forum-body p {
+  margin-bottom: 0.75rem;
+}
+
+.forum-body p:last-child {
+  margin-bottom: 0;
+}
+
+.forum-body br {
+  display: block;
+  content: "";
+  margin-top: 0.5rem;
+}
+
+.forum-body p:empty {
+  display: none;
+}
+
+
+/* ── 5. STATISTICS / REPORT PAGE ─────────────────────────────────────────── */
+/*
+  Report accent colors are driven by --app-report-* variables from ThemeContext.
+  Surface, background, and text colors fall back to the main app stone palette.
+
+  To change a report accent color:
+    Option A (persistent): Settings page → edit reportPurple, reportTeal, etc.
+    Option B (one-off):    Edit the fallback hex in @theme above.
+
+  Light/tint variants below are static — update them manually if you change
+  the main accent colors significantly.
+*/
+
+:root {
+  /* Accent colors — driven by ThemeContext (Settings page) */
+  --purple:      var(--app-report-purple, #534AB7);
+  --teal:        var(--app-report-teal,   #0F6E56);
+  --coral:       var(--app-report-coral,  #993C1D);
+  --amber:       var(--app-report-amber,  #854F0B);
+  --green:       var(--app-report-green,  #1D9E75);
+  --blue:        var(--app-report-blue,   #185FA5);
+
+  /* Light tint variants (static — update when changing main accent) */
+  --purple-light: #EEEDFE;
+  --teal-light:   #E1F5EE;
+  --coral-light:  #FAECE7;
+  --blue-light:   #E6F1FB;
+  --amber-light:  #FAEEDA;
+  --green-light:  #E1F5EE;
+  --gray:         #5F5E5A;
+  --gray-light:   #F1EFE8;
+
+  /* Surface, background, and text — follow the main app theme */
+  --bg-stats:      var(--app-stone-50,            #FAFAF8);
+  --surface-stats: #FFFFFF;
+  --border-stats:  rgba(0, 0, 0, 0.08);
+  --text-stats:    var(--app-text-color-primary,  #1A1916);
+  --muted-stats:   var(--app-text-color-secondary, #6B6960);
+  --grid-stats:    rgba(0, 0, 0, 0.05);
+}
+
+.stats-body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-stats);
+  color: var(--text-stats);
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.site-header-stats {
+  background: var(--text-stats);
+  color: white;
+  padding: 3rem 2rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.site-header-stats::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.03);
+}
+.header-label-stats {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 0.75rem;
+}
+.site-header-stats h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  color: white;
+}
+.site-header-stats p {
+  color: rgba(255,255,255,0.55);
+  font-size: 14px;
+  max-width: 500px;
+}
+.header-stats-row {
+  display: flex;
+  gap: 2.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  flex-wrap: wrap;
+}
+.header-stat-item .num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: white;
+  display: block;
+}
+.header-stat-item .lbl {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.toc-stats {
+  background: var(--surface-stats);
+  border-bottom: 1px solid var(--border-stats);
+  padding: 0 2rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.toc-stats a {
+  display: inline-block;
+  padding: 0.9rem 1rem 0.8rem;
+  font-size: 12px;
+  color: var(--muted-stats);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.01em;
+}
+.toc-stats a:hover { color: var(--text-stats); border-color: var(--purple); }
+
+.section-stats {
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--border-stats);
+}
+.section-stats:last-child { border-bottom: none; }
+
+.section-header-stats {
+  margin-bottom: 1.75rem;
+}
+.section-label-stats {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted-stats);
+  margin-bottom: 0.4rem;
+}
+.section-title-stats {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+.section-desc-stats {
+  font-size: 13px;
+  color: var(--muted-stats);
+  max-width: 620px;
+  line-height: 1.65;
+}
+
+.card-stats {
+  background: var(--surface-stats);
+  border: 1px solid var(--border-stats);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+.card-title-stats {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-stats);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metric-grid-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.metric-stats {
+  background: var(--gray-light);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+.metric-stats .label {
+  font-size: 11px;
+  color: var(--muted-stats);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.metric-stats .value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.7rem;
+  color: var(--text-stats);
+  line-height: 1;
+}
+.metric-stats .sub {
+  font-size: 11px;
+  color: var(--muted-stats);
+  margin-top: 3px;
+}
+
+.legend-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 0.75rem;
+  font-size: 12px;
+  color: var(--muted-stats);
+}
+.legend-stats span { display: flex; align-items: center; gap: 5px; }
+.legend-dot-stats {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.insight-grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 1.25rem; }
+.insight-stats {
+  background: var(--surface-stats);
+  border: 1px solid var(--border-stats);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  border-left: 3px solid var(--purple);
+}
+.insight-stats.warn  { border-left-color: var(--coral); }
+.insight-stats.ok    { border-left-color: var(--teal); }
+.insight-stats.amber { border-left-color: var(--amber); }
+.insight-stats h4 { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.insight-stats p  { font-size: 12px; color: var(--muted-stats); line-height: 1.6; }
+
+.badge-stats {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.badge-warn-stats  { background: var(--coral-light); color: var(--coral); }
+.badge-ok-stats    { background: var(--teal-light);  color: var(--teal); }
+.badge-amber-stats { background: var(--amber-light); color: var(--amber); }
+
+.heatmap-wrap-stats { overflow-x: auto; }
+.heatmap-stats { border-collapse: collapse; font-size: 12px; width: 100%; }
+.heatmap-stats th { padding: 5px 4px; font-weight: 400; color: var(--muted-stats); font-size: 11px; }
+.heatmap-stats td { padding: 2px; }
+.heatmap-stats .row-label { padding: 3px 8px; color: var(--muted-stats); white-space: nowrap; font-size: 11px; text-align: left; }
+.hm-cell-stats {
+  border-radius: 4px;
+  padding: 5px 2px;
+  text-align: center;
+  font-size: 11px;
+}
+
+.studio-card-stats {
+  background: var(--surface-stats);
+  border: 1px solid var(--border-stats);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.studio-header-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.studio-name-stats  { font-size: 15px; font-weight: 600; }
+.studio-note-stats  { font-size: 12px; color: var(--muted-stats); margin-bottom: 12px; }
+.studio-grid-stats  { display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.25rem; align-items: start; }
+@media (max-width: 600px) { .studio-grid-stats { grid-template-columns: 1fr; } }
+.studio-table-stats { width: 100%; border-collapse: collapse; font-size: 12px; }
+.studio-table-stats th { text-align: right; padding: 3px 6px; font-weight: 400; color: var(--muted-stats); font-size: 11px; }
+.studio-table-stats th:first-child { text-align: left; }
+.studio-table-stats td { padding: 3px 6px; text-align: right; }
+.studio-table-stats td:first-child { text-align: left; color: var(--muted-stats); white-space: nowrap; }
+.studio-table-stats tr.total-row td { font-weight: 600; border-top: 1px solid var(--border-stats); padding-top: 5px; }
+.foto-dot-stats {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.mono-bar-row-stats {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.mono-bar-label-stats { color: var(--muted-stats); }
+.mono-bar-stats {
+  display: flex;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mono-segment-stats { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; color: white; transition: width 0.3s; }
+
+.analyse-block-stats { margin-top: 1.5rem; border-top: 1px solid var(--border-stats); padding-top: 1.25rem; }
+.analyse-block-stats h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; margin-bottom: 0.75rem; color: var(--text-stats); }
+.analyse-text-stats { font-size: 13px; color: var(--muted-stats); line-height: 1.7; margin-bottom: 1rem; max-width: 780px; }
+.tiltak-list-stats { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.tiltak-list-stats li { font-size: 12.5px; color: var(--text-stats); background: var(--surface-stats); border: 1px solid var(--border-stats); border-radius: 8px; padding: 0.7rem 1rem; border-left: 3px solid var(--purple); line-height: 1.5; }
+.tiltak-list-stats li.warn  { border-left-color: var(--coral); }
+.tiltak-list-stats li.amber { border-left-color: var(--amber); }
+.tiltak-list-stats li.ok    { border-left-color: var(--teal); }
+.note-block-stats { background: var(--gray-light); border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; color: var(--muted-stats); margin-top: 0.75rem; line-height: 1.6; }
+
+.co-stats {
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--muted-stats);
+}
+.co-stats strong { color: var(--text-stats); font-weight: 600; }
+.co-stats.p-stats { background: rgba(83,74,183,.14);  border-left: 3px solid var(--purple); }
+.co-stats.t-stats { background: rgba(15,110,86,.14);  border-left: 3px solid var(--teal); }
+.co-stats.c-stats { background: rgba(153,60,29,.14);  border-left: 3px solid var(--coral); }
+.co-stats.a-stats { background: rgba(133,79,11,.14);  border-left: 3px solid var(--amber); }
+.co-stats.g-stats { background: rgba(29,158,117,.14); border-left: 3px solid var(--green); }
+.co-title-stats { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; opacity: .65; }
+
+.card-eye-stats { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted-stats); margin-bottom: 4px; }
+.card-h-stats   { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; margin-bottom: 10px; }
+
+.insight-stats.p-stats { border-left-color: var(--purple); }
+.insight-stats.c-stats { border-left-color: var(--coral); }
+.insight-stats.a-stats { border-left-color: var(--amber); }
+.insight-stats.g-stats { border-left-color: var(--green); }
+
+.analysis-stats h2 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; margin-bottom: 8px; }
+.analysis-stats h3 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-top: 32px; margin-bottom: 10px; color: var(--text-stats); border-bottom: 1px solid var(--border-stats); padding-bottom: 8px; }
+
+.nb-stats:hover { color: var(--text-stats) !important; }
+.nb-stats.on    { color: var(--purple) !important; border-bottom-color: var(--purple) !important; }

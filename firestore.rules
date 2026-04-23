@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidNote(data) {
+      return hasRequiredFields(['jobId', 'content', 'author', 'created_at']) &&
+             data.jobId is string &&
+             data.content is string && data.content.size() < 5000 &&
+             data.author is string;
+    }
+
+    function isValidExtraWork(data) {
+      return hasRequiredFields(['jobId', 'invNr', 'created_at']) &&
+             data.jobId is string &&
+             data.invNr is string && data.invNr.size() < 100;
+    }
+
+    function isValidJobLink(data) {
+      return hasRequiredFields(['jobId', 'url', 'created_at']) &&
+             data.jobId is string &&
+             data.url is string && data.url.size() < 2000 &&
+             (!('title' in data) || (data.title is string && data.title.size() < 200));
+    }
+
+    function isValidJobOverride(data) {
+      return (!('customType' in data) || (data.customType is string && data.customType.size() < 200));
+    }
+
+    function isValidWorkStatus(data) {
+      return hasRequiredFields(['jobId', 'workId', 'isDone', 'updated_at']) &&
+             data.jobId is string &&
+             data.workId is string &&
+             data.isDone is bool;
+    }
+
+    function isValidPhotographerProfile(data) {
+      return hasRequiredFields(['id', 'name']) &&
+             data.id is string &&
+             data.name is string &&
+             (!('strengths' in data) || data.strengths is string) &&
+             (!('weaknesses' in data) || data.weaknesses is string) &&
+             (!('experience' in data) || data.experience is string) &&
+             (!('expertise' in data) || data.expertise is string);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /notes/{noteId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidNote(request.resource.data);
+      allow update: if isAuthenticated() && isValidNote(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    
+    match /extra_works/{workId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidExtraWork(request.resource.data);
+      allow update: if isAuthenticated() && isValidExtraWork(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /job_links/{linkId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidJobLink(request.resource.data);
+      allow update: if isAuthenticated() && isValidJobLink(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /job_overrides/{jobId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidJobOverride(request.resource.data);
+      allow update: if isAuthenticated() && isValidJobOverride(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /work_status/{statusId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidWorkStatus(request.resource.data);
+      allow update: if isAuthenticated() && isValidWorkStatus(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /photographer_profiles/{profileId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPhotographerProfile(request.resource.data);
+      allow update: if isAuthenticated() && isValidPhotographerProfile(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /analytics_cache/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
