@@ -204,6 +204,8 @@ interface ThemeContextType {
   zoomOut: () => void;
   resetZoom: () => void;
   loading: boolean;
+  darkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -211,6 +213,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<ThemeColors>(DEFAULT_THEME);
   const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState<boolean>(() => localStorage.getItem('darkMode') === 'true');
 
   // Load theme from Firestore on mount
   useEffect(() => {
@@ -231,6 +234,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     loadTheme();
   }, []);
+
+  // Apply dark mode class to html element
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', String(darkMode));
+  }, [darkMode]);
 
   // Apply theme to CSS variables
   useEffect(() => {
@@ -317,8 +330,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateTheme({ fontSizeBase: "16px" });
   };
 
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
+
   return (
-    <ThemeContext.Provider value={{ theme, updateTheme, resetTheme, zoomIn, zoomOut, resetZoom, loading }}>
+    <ThemeContext.Provider value={{ theme, updateTheme, resetTheme, zoomIn, zoomOut, resetZoom, loading, darkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Camera, RefreshCw, Filter, Calendar, ArrowLeft, LayoutGrid, List as ListIcon, Settings, Search, LayoutDashboard, FolderOpen, Archive } from "lucide-react";
+import { Camera, RefreshCw, Filter, Calendar, ArrowLeft, LayoutGrid, List as ListIcon, Settings, Search, LayoutDashboard, FolderOpen, Archive, Moon, Sun } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Job } from "./types";
 import { JobDetails } from "./components/JobDetails";
@@ -41,7 +41,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const { theme, zoomIn, zoomOut, resetZoom } = useTheme();
+  const { theme, zoomIn, zoomOut, resetZoom, darkMode, toggleDarkMode } = useTheme();
   
   // Initialize state from URL if present
   const getInitialState = () => {
@@ -328,6 +328,15 @@ function AppContent() {
             </div>
           </div>
           
+          {/* Dark mode toggle — visible on all screen sizes */}
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-full transition-colors hover:bg-stone-200 text-stone-500 hover:text-stone-900 shrink-0"
+            title={darkMode ? "Lys modus" : "Mørk modus"}
+          >
+            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {/* Mobile Buttons */}
           <div className="flex md:hidden items-center gap-2">
             <button 

@@ -64,6 +64,14 @@ export const DashboardJobCard: React.FC<DashboardJobCardProps> = ({
   const isNB = isJobNBUtil(job, jobOverrides);
   const progress = jobProgress[job.id];
 
+  const isOverdue = deadlineInfo.diffInDays !== null && deadlineInfo.diffInDays < 0;
+  const isCritical = deadlineInfo.diffInDays !== null && deadlineInfo.diffInDays >= 0 && deadlineInfo.diffInDays <= 1;
+  const urgencyGlow = isOverdue
+    ? `0 0 0 1px ${deadlineInfo.statusColor}40, 0 2px 8px ${deadlineInfo.statusColor}20`
+    : isCritical
+    ? `0 0 0 1px ${deadlineInfo.statusColor}30`
+    : undefined;
+
   return (
     <div
       onClick={() => onSelectJob(job)}
@@ -74,7 +82,7 @@ export const DashboardJobCard: React.FC<DashboardJobCardProps> = ({
       tabIndex={0}
       aria-label={`Se detaljer for ${name}`}
       className="card-job group"
-      style={{ borderRadius: cardBorderRadius, borderTop: `3px solid ${deadlineInfo.statusColor || '#2E7D4F'}` }}
+      style={{ borderRadius: cardBorderRadius, borderTop: `3px solid ${deadlineInfo.statusColor || '#2E7D4F'}`, boxShadow: urgencyGlow }}
     >
       <div className="p-3 flex flex-col flex-1 gap-2">
         <h3 className="text-sm font-serif font-bold leading-tight transition-colors line-clamp-2 text-stone-900 group-hover:text-black">
@@ -92,6 +100,27 @@ export const DashboardJobCard: React.FC<DashboardJobCardProps> = ({
             </span>
           )}
         </div>
+
+        {/* Progress bar — weekly variant */}
+        {variant === 'weekly' && progress && progress.totalCount > 0 && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[7px] font-bold uppercase tracking-widest text-stone-400">Bilder tatt</span>
+              <span className="text-[9px] font-bold tabular-nums" style={{ color: theme.statusProgress }}>
+                {progress.doneCount}/{progress.totalCount}
+              </span>
+            </div>
+            <div className="h-1 rounded-full bg-stone-200 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, (progress.doneCount / progress.totalCount) * 100)}%`,
+                  backgroundColor: theme.statusProgress
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Image indicators — weekly variant */}
         {variant === 'weekly' && (
@@ -137,21 +166,13 @@ export const DashboardJobCard: React.FC<DashboardJobCardProps> = ({
           <div className="flex items-end gap-3 shrink-0">
             {variant === 'weekly' && (
               <>
-                {progress && (
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className="text-base font-serif font-bold leading-none" style={{ color: theme.statusProgress }}>
-                      {progress.doneCount}/{progress.totalCount}
-                    </span>
-                    <span className="text-[7px] font-bold uppercase tracking-widest text-stone-400 mt-1">Bilder tatt</span>
-                  </div>
-                )}
                 {deadline && (
                   <div className="flex flex-col items-end shrink-0">
                     <span className="text-base font-serif font-bold leading-none capitalize" style={{ color: deadlineInfo.statusColor }}>
                       {parseDate(deadline)?.toLocaleDateString('nb-NO', { weekday: 'long' }) || "-"}
                     </span>
                     <span className="text-[7px] font-bold uppercase tracking-widest mt-1" style={{ color: deadlineInfo.statusColor }}>
-                      {deadlineInfo.diffInDays !== null && deadlineInfo.diffInDays < 0 ? "over frist" : "frist"}
+                      {isOverdue ? "over frist" : "frist"}
                     </span>
                   </div>
                 )}

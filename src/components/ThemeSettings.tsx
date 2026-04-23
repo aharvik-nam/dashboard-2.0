@@ -159,7 +159,7 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({ uniqueLocations = 
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] animate-in fade-in duration-500">
-        <Card className="w-full max-w-md p-8 bg-white shadow-xl border-stone-200">
+        <Card className="w-full max-w-md p-8 shadow-xl">
           <div className="flex flex-col items-center text-center space-y-6">
             <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
               <Lock className="w-8 h-8 text-stone-900" />
