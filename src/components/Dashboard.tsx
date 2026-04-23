@@ -6,7 +6,7 @@ import { JobTable } from "./dashboard/JobTable";
 import { TrendChart } from "./dashboard/TrendChart";
 import { WorkloadSidebar } from "./dashboard/WorkloadSidebar";
 import { DashboardJobCard } from "./dashboard/DashboardJobCard";
-import { getJobLocationStr, getJobDeadlineStr, categorizeLocation, isJobNB as isJobNBUtil } from "../utils/jobUtils";
+import { parseDate, getJobLocationStr, getJobDeadlineStr, categorizeLocation, isJobNB as isJobNBUtil } from "../utils/jobUtils";
 import { STATUS } from "../constants/fieldNames";
 import { getWeekNumber } from "../utils/dateUtils";
 import { getAIRecommendationForJob } from "../services/geminiService";
