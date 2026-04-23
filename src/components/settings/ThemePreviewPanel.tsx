@@ -22,13 +22,13 @@ export const ThemePreviewPanel: React.FC<ThemePreviewPanelProps> = ({ localTheme
         <button
           onClick={() => setPreviewMode('card')}
           className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${
-            previewMode === 'card' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'
+            previewMode === 'card' ? 'bg-stone-50 text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'
           }`}
         >Kort</button>
         <button
           onClick={() => setPreviewMode('details')}
           className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${
-            previewMode === 'details' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'
+            previewMode === 'details' ? 'bg-stone-50 text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'
           }`}
         >Detaljer</button>
       </div>
@@ -37,7 +37,7 @@ export const ThemePreviewPanel: React.FC<ThemePreviewPanelProps> = ({ localTheme
     {previewMode === 'card' ? (
       <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 shadow-inner">
         <motion.div
-          className="bg-white border border-stone-200 overflow-hidden"
+          className="bg-stone-50 border border-stone-200 overflow-hidden"
           style={{
             borderRadius: localTheme.cardSettings?.cardBorderRadius || "1rem",
             boxShadow: localTheme.cardSettings?.cardShadow === 'none' ? 'none'
@@ -97,7 +97,7 @@ export const ThemePreviewPanel: React.FC<ThemePreviewPanelProps> = ({ localTheme
       </div>
     ) : (
       <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 shadow-inner">
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
+        <div className="bg-stone-50 rounded-xl border border-stone-200 overflow-hidden shadow-sm">
           <div className="p-4 border-b border-stone-100">
             <div className="flex gap-1.5 mb-2">
               {localTheme.jobDetailsSettings?.highlightFields?.includes('location') && (
@@ -111,7 +111,7 @@ export const ThemePreviewPanel: React.FC<ThemePreviewPanelProps> = ({ localTheme
           </div>
           <div className="grid grid-cols-2 gap-px bg-stone-100 border-b border-stone-100">
             {localTheme.jobDetailsSettings?.highlightFields?.slice(0, 4).map(f => (
-              <div key={f} className="bg-white p-2 flex flex-col gap-0.5">
+              <div key={f} className="bg-stone-50 p-2 flex flex-col gap-0.5">
                 <span className="text-[7px] font-bold uppercase tracking-widest text-stone-400">{f}</span>
                 <span className="text-[9px] font-medium text-stone-900 truncate">Eksempeldata</span>
               </div>
@@ -148,7 +148,7 @@ export const ThemePreviewPanel: React.FC<ThemePreviewPanelProps> = ({ localTheme
       </div>
     )}
 
-    <Card className="bg-white p-4">
+    <Card className="bg-stone-50 p-4">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400">UI Elementer</h4>
       </div>

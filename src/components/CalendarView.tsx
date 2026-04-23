@@ -121,12 +121,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div className="h-10 bg-stone-200 rounded-lg w-32"></div>
           </div>
         </div>
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden flex-auto flex flex-col">
+        <div className="bg-stone-50 border border-stone-200 rounded-2xl shadow-sm overflow-hidden flex-auto flex flex-col">
           <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50">
             {[1, 2, 3, 4, 5, 6, 7].map(i => <div key={i} className="py-3 h-10"></div>)}
           </div>
           <div className="grid grid-cols-7 flex-1 grid-rows-1 bg-stone-100 gap-px">
-            {[1, 2, 3, 4, 5, 6, 7].map(i => <div key={i} className="bg-white min-h-[120px] p-2"></div>)}
+            {[1, 2, 3, 4, 5, 6, 7].map(i => <div key={i} className="bg-stone-50 min-h-[120px] p-2"></div>)}
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           <h2 className="text-2xl md:text-3xl font-serif font-black capitalize text-stone-900">
             {headerTitle}
           </h2>
-          <div className="flex items-center rounded-lg shadow-sm border bg-white border-stone-200">
+          <div className="flex items-center rounded-lg shadow-sm border bg-stone-50 border-stone-200">
             <button onClick={prevPeriod} className="p-2 transition-colors border-r hover:bg-stone-50 text-stone-600 border-stone-200">
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -162,7 +162,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <select
                 value={selectedOwner || "all"}
                 onChange={(e) => setSelectedOwner(e.target.value)}
-                className="bg-white border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-stone-900/10"
+                className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-stone-900/10"
               >
                 <option value="all">Alle fotografer</option>
                 {uniqueOwners.map(owner => (
@@ -184,7 +184,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="border rounded-2xl shadow-sm overflow-hidden flex-auto flex flex-col bg-white border-stone-200">
+      <div className="border rounded-2xl shadow-sm overflow-hidden flex-auto flex flex-col bg-stone-50 border-stone-200">
         {/* Desktop View */}
         <div className="hidden md:flex flex-col flex-auto">
           {/* Weekday Headers */}
@@ -208,7 +208,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <div 
                   key={index} 
                   className={`min-w-0 p-2 flex flex-col gap-1 transition-colors ${
-                    cell.currentMonth ? 'bg-white hover:bg-stone-50' : 'bg-stone-50/50'
+                    cell.currentMonth ? 'bg-stone-50 hover:bg-stone-50' : 'bg-stone-50/50'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-1">
@@ -315,7 +315,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         <button
                           key={job.id}
                           onClick={() => onSelectJob(job)}
-                          className="text-left border transition-all group w-full flex flex-col gap-1 p-3 rounded-xl bg-white hover:bg-stone-50 border-stone-200 relative"
+                          className="text-left border transition-all group w-full flex flex-col gap-1 p-3 rounded-xl bg-stone-50 hover:bg-stone-50 border-stone-200 relative"
                           style={{
                             borderLeft: `4px solid ${locBg}`
                           }}

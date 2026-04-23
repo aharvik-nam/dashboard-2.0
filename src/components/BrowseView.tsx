@@ -224,7 +224,7 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
+              className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
             >
               <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
               <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">

@@ -265,7 +265,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
                     key={val}
                     onClick={() => setDeadlineFilter(val as any)}
                     className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      deadlineFilter === val ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                      deadlineFilter === val ? "bg-stone-50 text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
                     {val === "all" ? "Alle" : val === "overdue" ? "Over frist" : "Innen frist"}
@@ -282,7 +282,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
                     key={val}
                     onClick={() => setTypeFilter(val as any)}
                     className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      typeFilter === val ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                      typeFilter === val ? "bg-stone-50 text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
                     {val === "all" ? "Alle" : val.charAt(0).toUpperCase() + val.slice(1)}
@@ -299,7 +299,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
                     key={val}
                     onClick={() => setItemsFilter(val as any)}
                     className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      itemsFilter === val ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                      itemsFilter === val ? "bg-stone-50 text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
                     }`}
                   >
                     {val === "all" ? "Alle" : val + " verk"}
@@ -328,7 +328,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
+                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
               >
                 <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
                 <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
@@ -369,7 +369,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
+                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
               >
                 <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
                 <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
@@ -400,7 +400,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
 
       {/* Archive List */}
       <section>
-        <Card className="bg-white">
+        <Card className="bg-stone-50">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-stone-100">

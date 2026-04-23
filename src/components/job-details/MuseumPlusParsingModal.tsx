@@ -37,7 +37,7 @@ export const MuseumPlusParsingModal: React.FC<MuseumPlusParsingModalProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+            className="bg-stone-50 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
           >
             <div className="p-6 border-b border-stone-100 flex items-center justify-between">
               <h3 className="text-lg font-serif font-medium text-stone-900">Parse MuseumPlus Lenker</h3>

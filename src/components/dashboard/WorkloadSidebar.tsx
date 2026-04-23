@@ -34,7 +34,7 @@ export const WorkloadSidebar: React.FC<WorkloadSidebarProps> = ({
 }) => (
   <div className="space-y-8">
     {/* Workload Card */}
-    <section className="p-6 rounded-2xl border bg-white border-stone-200 shadow-sm">
+    <section className="p-6 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm">
       <div className="flex flex-col gap-4 mb-6">
         <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400">Arbeidsmengde (14 dager)</h3>
         <div className="flex flex-wrap gap-2">
@@ -90,7 +90,7 @@ export const WorkloadSidebar: React.FC<WorkloadSidebarProps> = ({
         <button
           key={cat}
           onClick={() => onLocationClick(cat)}
-          className={`w-full p-4 rounded-2xl border bg-white border-stone-200 shadow-sm flex items-center justify-between hover:bg-stone-50 transition-all active:scale-[0.98] group text-left ${extra}`}
+          className={`w-full p-4 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm flex items-center justify-between hover:bg-stone-50 transition-all active:scale-[0.98] group text-left ${extra}`}
         >
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center ${hoverBg} transition-colors`}>

@@ -349,7 +349,7 @@ export const JobDetails: React.FC<JobDetailsProps> = ({ job, loading, onBack, is
       )}
 
       {/* Send to NB Checkbox */}
-      <div className="mb-8 flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 bg-white border-stone-200 shadow-sm hover:shadow-md">
+      <div className="mb-8 flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 bg-stone-50 border-stone-200 shadow-sm hover:shadow-md">
         <input 
           type="checkbox"
           id="sendToNB"

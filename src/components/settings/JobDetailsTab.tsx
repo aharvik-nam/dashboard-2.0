@@ -20,7 +20,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
 }) => (
   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Fremhevet Info</h3>
         </div>
@@ -38,7 +38,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
               className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                 localTheme.jobDetailsSettings?.highlightFields?.includes(field.key)
                   ? 'bg-stone-900 border-stone-900 text-white'
-                  : 'bg-white border-stone-100 text-stone-600 hover:border-stone-200'
+                  : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200'
               }`}
             >
               <span className="text-xs font-medium">{field.label}</span>
@@ -50,7 +50,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
         </div>
       </Card>
 
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Tabell-innstillinger</h3>
         </div>
@@ -66,7 +66,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
               className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                 localTheme.jobDetailsSettings?.[item.key as keyof typeof localTheme.jobDetailsSettings]
                   ? 'bg-stone-900 border-stone-900 text-white'
-                  : 'bg-white border-stone-100 text-stone-600 hover:border-stone-200'
+                  : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200'
               }`}
             >
               <span className="text-xs font-medium">{item.label}</span>
@@ -79,7 +79,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
       </Card>
     </div>
 
-    <Card className="bg-white">
+    <Card className="bg-stone-50">
       <div className="mb-6 border-b border-stone-100 pb-2">
         <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Kolonner & Feltmapping</h3>
       </div>
@@ -94,7 +94,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
                   value={localTheme.jobDetailsSettings?.artworkColumnHeaders?.[idx] || ""}
                   onChange={(e) => onColumnHeaderChange(idx, e.target.value)}
                   placeholder={`Kolonne ${idx + 1}`}
-                  className="w-full p-2 bg-stone-50 border border-stone-100 rounded-lg text-[10px] font-bold focus:bg-white focus:border-stone-900 transition-all"
+                  className="w-full p-2 bg-stone-50 border border-stone-100 rounded-lg text-[10px] font-bold focus:bg-stone-50 focus:border-stone-900 transition-all"
                 />
               </div>
             ))}
@@ -122,7 +122,7 @@ export const JobDetailsTab: React.FC<JobDetailsTabProps> = ({
                 <select
                   value={localTheme.jobDetailsSettings?.artworkFieldMapping?.[field.key] ?? 0}
                   onChange={(e) => onFieldMappingChange(field.key, parseInt(e.target.value))}
-                  className="text-[9px] font-bold bg-white border border-stone-200 rounded px-1.5 py-0.5 outline-none focus:border-stone-900"
+                  className="text-[9px] font-bold bg-stone-50 border border-stone-200 rounded px-1.5 py-0.5 outline-none focus:border-stone-900"
                 >
                   <option value={0}>K1</option>
                   <option value={1}>K2</option>

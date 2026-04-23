@@ -17,8 +17,8 @@ interface ThemeSettingsProps {
 }
 
 export const ThemeSettings: React.FC<ThemeSettingsProps> = ({ uniqueLocations = [], uniqueTypes = [], uniqueOwners = [] }) => {
-  const { theme, updateTheme, resetTheme } = useTheme();
-  const [localTheme, setLocalTheme] = useState(theme);
+  const { baseTheme, updateTheme, resetTheme } = useTheme();
+  const [localTheme, setLocalTheme] = useState(baseTheme);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<'colors' | 'cards' | 'jobDetails' | 'typography' | 'photographers'>('colors');
   const [previewMode, setPreviewMode] = useState<'card' | 'details'>('card');
@@ -152,7 +152,7 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({ uniqueLocations = 
 
   const handleReset = async () => {
     await resetTheme();
-    setLocalTheme(theme);
+    setLocalTheme(baseTheme);
     setHasChanges(false);
   };
 
@@ -176,7 +176,7 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({ uniqueLocations = 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Passord"
-                  className={`w-full px-4 py-3 bg-stone-50 border rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-stone-900/5 transition-all outline-none ${
+                  className={`w-full px-4 py-3 bg-stone-50 border rounded-xl text-sm focus:bg-stone-50 focus:ring-2 focus:ring-stone-900/5 transition-all outline-none ${
                     authError ? 'border-red-500' : 'border-stone-200 focus:border-stone-900'
                   }`}
                   autoFocus
@@ -253,7 +253,7 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({ uniqueLocations = 
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                    activeTab === tab.id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+                    activeTab === tab.id ? 'bg-stone-50 text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
                   }`}
                 >
                   <tab.icon className="w-3.5 h-3.5" />

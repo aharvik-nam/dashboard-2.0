@@ -12,7 +12,7 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({ nmid }) => {
   const collectionUrl = `https://www.nasjonalmuseet.no/samlingen/objekt/${nmid}`;
 
   return (
-    <div className="p-3 flex items-center justify-between transition-all bg-white border border-stone-200 rounded-lg shadow-sm hover:shadow-md">
+    <div className="p-3 flex items-center justify-between transition-all bg-stone-50 border border-stone-200 rounded-lg shadow-sm hover:shadow-md">
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-md bg-stone-100">
           <ImageIcon className="w-4 h-4 text-text-muted" />

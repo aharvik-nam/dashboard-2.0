@@ -11,7 +11,7 @@ interface CardsTabProps {
 export const CardsTab: React.FC<CardsTabProps> = ({ localTheme, onCardSettingChange }) => (
   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Layout & Størrelse</h3>
         </div>
@@ -69,7 +69,7 @@ export const CardsTab: React.FC<CardsTabProps> = ({ localTheme, onCardSettingCha
         </div>
       </Card>
 
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Synlig Innhold</h3>
         </div>
@@ -88,7 +88,7 @@ export const CardsTab: React.FC<CardsTabProps> = ({ localTheme, onCardSettingCha
               className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                 localTheme.cardSettings?.[item.key as keyof typeof localTheme.cardSettings]
                   ? 'bg-stone-900 border-stone-900 text-white'
-                  : 'bg-white border-stone-100 text-stone-600 hover:border-stone-200'
+                  : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200'
               }`}
             >
               <span className="text-xs font-medium">{item.label}</span>

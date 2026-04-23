@@ -73,7 +73,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                 className={`px-3 py-1.5 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wide border flex items-center gap-2 ${
                   isActive 
                     ? 'bg-stone-900 text-white border-transparent shadow-sm' 
-                    : "bg-white text-text-secondary border-stone-200 hover:border-stone-300"
+                    : "bg-stone-50 text-text-secondary border-stone-200 hover:border-stone-300"
                 }`}
               >
                 {filter.label}
@@ -98,7 +98,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
             className={`px-3 py-1.5 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wide border flex items-center gap-2 ${
               selectedLocation.length === 0
                 ? "bg-text-primary text-text-inverted border-text-primary shadow-sm"
-                : "bg-white text-text-secondary border-stone-200 hover:border-stone-300"
+                : "bg-stone-50 text-text-secondary border-stone-200 hover:border-stone-300"
             }`}
           >
             Alle steder
@@ -125,7 +125,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                 className={`px-3 py-1.5 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wide border flex items-center gap-2 ${
                   isActive 
                     ? "border-transparent shadow-sm text-text-primary" 
-                    : "bg-white text-text-secondary border-stone-200 hover:border-stone-300"
+                    : "bg-stone-50 text-text-secondary border-stone-200 hover:border-stone-300"
                 }`}
                 style={isActive ? { backgroundColor: locBg, color: locText } : {}}
               >
@@ -146,7 +146,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
             className={`px-3 py-1.5 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wide border flex items-center gap-2 ${
               selectedType.length === 0
                 ? "bg-text-primary text-text-inverted border-text-primary shadow-sm"
-                : "bg-white text-text-secondary border-stone-200 hover:border-stone-300"
+                : "bg-stone-50 text-text-secondary border-stone-200 hover:border-stone-300"
             }`}
           >
             Alle typer
@@ -179,7 +179,7 @@ export const BrowseFilters: React.FC<BrowseFiltersProps> = ({
                 className={`px-3 py-1.5 rounded-lg transition-all text-[10px] font-bold uppercase tracking-wide border flex items-center gap-2 ${
                   isActive 
                     ? "border-transparent shadow-sm text-text-primary" 
-                    : "bg-white text-text-secondary border-stone-200 hover:border-stone-300"
+                    : "bg-stone-50 text-text-secondary border-stone-200 hover:border-stone-300"
                 }`}
                 style={isActive ? { backgroundColor: typeBg, color: typeText } : {}}
               >

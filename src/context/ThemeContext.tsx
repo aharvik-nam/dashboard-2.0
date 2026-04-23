@@ -90,6 +90,37 @@ export interface ThemeColors {
   };
 }
 
+const DARK_OVERRIDES: Partial<ThemeColors> = {
+  stone50:  "#141210",
+  stone100: "#1c1917",
+  stone200: "#28231e",
+  stone300: "#3a3330",
+  stone400: "#5a5450",
+  stone500: "#78716c",
+  stone600: "#a8a29e",
+  stone700: "#c8c2bc",
+  stone800: "#dedad5",
+  stone900: "#eeeae5",
+  stone950: "#f5f2ee",
+  textColorPrimary:   "#eeeae5",
+  textColorSecondary: "#a8a29e",
+  textColorMuted:     "#5a5450",
+  textColorInverted:  "#141210",
+  headerBg:    "#1c1917",
+  headerBorder: "#28231e",
+  navBg:   "rgba(40, 35, 30, 0.85)",
+  navBorder: "rgba(255, 255, 255, 0.06)",
+  statusCritical: "#F8C761",
+  statusOverdue:  "#F8A994",
+  statusWithin:   "#6BBFB5",
+  reportPurple: "#7B72D4",
+  reportTeal:   "#2E9E7A",
+  reportCoral:  "#C05535",
+  reportAmber:  "#B07020",
+  reportGreen:  "#2EC48F",
+  reportBlue:   "#3381C5",
+};
+
 const DEFAULT_THEME: ThemeColors = {
   stone50: "#fafaf9",
   stone100: "#f5f5f4",
@@ -198,6 +229,7 @@ const DEFAULT_THEME: ThemeColors = {
 
 interface ThemeContextType {
   theme: ThemeColors;
+  baseTheme: ThemeColors;
   updateTheme: (newTheme: Partial<ThemeColors>) => Promise<void>;
   resetTheme: () => Promise<void>;
   zoomIn: () => void;
@@ -211,9 +243,11 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<ThemeColors>(DEFAULT_THEME);
+  const [baseTheme, setBaseTheme] = useState<ThemeColors>(DEFAULT_THEME);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState<boolean>(() => localStorage.getItem('darkMode') === 'true');
+
+  const theme: ThemeColors = darkMode ? { ...baseTheme, ...DARK_OVERRIDES } : baseTheme;
 
   // Load theme from Firestore on mount
   useEffect(() => {
@@ -223,7 +257,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setTheme({ ...DEFAULT_THEME, ...docSnap.data() } as ThemeColors);
+          setBaseTheme({ ...DEFAULT_THEME, ...docSnap.data() } as ThemeColors);
         }
       } catch (error) {
         console.error("Failed to load theme:", error);
@@ -255,8 +289,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Special handling for font size with offset
         if (key === 'fontSizeBase' || key === 'fontSizeOffset') {
-          const base = parseInt(theme.fontSizeBase) || 16;
-          const offset = theme.fontSizeOffset || 0;
+          const base = parseInt(baseTheme.fontSizeBase) || 16;
+          const offset = baseTheme.fontSizeOffset || 0;
           root.style.setProperty('--app-font-size-base', `${base + offset}px`);
           return;
         }
@@ -283,10 +317,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     applyVariables(theme);
-  }, [theme]);
+  }, [theme, darkMode]);
 
   const updateTheme = async (newTheme: Partial<ThemeColors>) => {
-    setTheme(prev => {
+    setBaseTheme(prev => {
       const updatedTheme = { ...prev, ...newTheme };
       
       // Save to Firestore
@@ -305,7 +339,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const resetTheme = async () => {
-    setTheme(DEFAULT_THEME);
+    setBaseTheme(DEFAULT_THEME);
     try {
       const docRef = doc(db, "settings", "theme");
       await setDoc(docRef, DEFAULT_THEME);
@@ -315,12 +349,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const zoomIn = () => {
-    const currentSize = parseInt(theme.fontSizeBase) || 16;
+    const currentSize = parseInt(baseTheme.fontSizeBase) || 16;
     updateTheme({ fontSizeBase: `${currentSize + 2}px` });
   };
 
   const zoomOut = () => {
-    const currentSize = parseInt(theme.fontSizeBase) || 16;
+    const currentSize = parseInt(baseTheme.fontSizeBase) || 16;
     if (currentSize > 8) {
       updateTheme({ fontSizeBase: `${currentSize - 2}px` });
     }
@@ -333,7 +367,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleDarkMode = () => setDarkMode(prev => !prev);
 
   return (
-    <ThemeContext.Provider value={{ theme, updateTheme, resetTheme, zoomIn, zoomOut, resetZoom, loading, darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ theme, baseTheme, updateTheme, resetTheme, zoomIn, zoomOut, resetZoom, loading, darkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );

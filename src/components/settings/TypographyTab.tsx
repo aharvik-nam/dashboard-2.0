@@ -11,7 +11,7 @@ interface TypographyTabProps {
 export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChange, onFontSizeOffsetChange }) => (
   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Tekststørrelse</h3>
         </div>
@@ -25,7 +25,7 @@ export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChan
                 className={`flex flex-col items-center justify-center py-3 border rounded-xl transition-all ${
                   localTheme.fontSizeOffset === offset
                     ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/10'
-                    : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200 hover:bg-white'
+                    : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200 hover:bg-stone-50'
                 }`}
               >
                 <span className="text-xs font-bold">+{offset}</span>
@@ -38,7 +38,7 @@ export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChan
         </div>
       </Card>
 
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Font-par (Anbefalte kombinasjoner)</h3>
         </div>
@@ -56,7 +56,7 @@ export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChan
                 className={`w-full text-left p-4 rounded-xl border transition-all group ${
                   localTheme.fontSans === pair.sans && localTheme.fontSerif === pair.serif
                     ? 'bg-stone-900 border-stone-900 text-white'
-                    : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200 hover:bg-white'
+                    : 'bg-stone-50 border-stone-100 text-stone-600 hover:border-stone-200 hover:bg-stone-50'
                 }`}
               >
                 <div className="flex flex-col gap-1">
@@ -72,7 +72,7 @@ export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChan
         </div>
       </Card>
 
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Individuelle Fonter</h3>
         </div>
@@ -115,7 +115,7 @@ export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChan
               <select
                 value={f.value}
                 onChange={(e) => onChange(f.key, e.target.value)}
-                className="w-full p-2 bg-stone-50 border border-stone-100 rounded-lg text-xs focus:bg-white focus:border-stone-900 transition-all outline-none appearance-none cursor-pointer"
+                className="w-full p-2 bg-stone-50 border border-stone-100 rounded-lg text-xs focus:bg-stone-50 focus:border-stone-900 transition-all outline-none appearance-none cursor-pointer"
               >
                 {f.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 {!f.options.some(opt => opt.value === f.value) && (
@@ -127,7 +127,7 @@ export const TypographyTab: React.FC<TypographyTabProps> = ({ localTheme, onChan
         </div>
       </Card>
 
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-stone-900">Tekstfarger</h3>
         </div>

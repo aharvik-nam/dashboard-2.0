@@ -214,7 +214,7 @@ export const JobWorksTable: React.FC<JobWorksTableProps> = ({
                                             type="text"
                                             value={editValue}
                                             onChange={(e) => setEditValue(e.target.value)}
-                                            className="w-32 px-2 py-1 rounded text-xs outline-none transition-all bg-white border-stone-300 text-text-primary focus:ring-1 focus:ring-text-primary"
+                                            className="w-32 px-2 py-1 rounded text-xs outline-none transition-all bg-stone-50 border-stone-300 text-text-primary focus:ring-1 focus:ring-text-primary"
                                             autoFocus
                                             onKeyDown={(e) => {
                                               if (e.key === 'Enter') saveEdit(spor.id);
@@ -441,7 +441,7 @@ export const JobWorksTable: React.FC<JobWorksTableProps> = ({
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
                             isDone 
                               ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-white border border-stone-200 text-text-muted hover:text-text-primary hover:border-stone-400'
+                              : 'bg-stone-50 border border-stone-200 text-text-muted hover:text-text-primary hover:border-stone-400'
                           }`}
                         >
                           {isDone ? <Check className="w-3 h-3" /> : <div className="w-3 h-3 border-2 border-current rounded-sm opacity-30" />}
@@ -483,7 +483,7 @@ export const JobWorksTable: React.FC<JobWorksTableProps> = ({
                           onChange={(e) => setManualInput(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleAddManualWork()}
                           placeholder="Legg til inventarnummer manuelt..."
-                          className="w-full pl-9 pr-4 py-2 rounded-lg text-sm transition-all outline-none bg-white border-stone-200 text-text-primary focus:ring-2 focus:ring-text-primary"
+                          className="w-full pl-9 pr-4 py-2 rounded-lg text-sm transition-all outline-none bg-stone-50 border-stone-200 text-text-primary focus:ring-2 focus:ring-text-primary"
                         />
                         <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                       </div>

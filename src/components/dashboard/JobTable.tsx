@@ -46,7 +46,7 @@ export const JobTable: React.FC<JobTableProps> = ({
 
 
   return (
-    <Card className="bg-white">
+    <Card className="bg-stone-50">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-stone-100">

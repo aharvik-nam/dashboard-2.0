@@ -40,7 +40,7 @@ export const BrowseList: React.FC<BrowseListProps> = ({
             key={job.id}
             whileHover={{ x: 4, backgroundColor: 'rgba(250, 250, 249, 1)' }}
             onClick={() => onSelectJob(job)}
-            className="group flex items-center justify-between p-4 bg-white border border-stone-200/60 rounded-xl transition-all text-left relative overflow-hidden"
+            className="group flex items-center justify-between p-4 bg-stone-50 border border-stone-200/60 rounded-xl transition-all text-left relative overflow-hidden"
           >
             {override?.sendToNB && (
               <div 

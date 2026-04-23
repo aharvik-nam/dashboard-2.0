@@ -12,7 +12,7 @@ export const ArchiveStatisticsTab: React.FC = () => {
           onClick={() => setActiveReport('volum')}
           className={`px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
             activeReport === 'volum'
-              ? "bg-white text-stone-900 shadow-sm"
+              ? "bg-stone-50 text-stone-900 shadow-sm"
               : "text-stone-500 hover:text-stone-700"
           }`}
         >
@@ -22,7 +22,7 @@ export const ArchiveStatisticsTab: React.FC = () => {
           onClick={() => setActiveReport('tid')}
           className={`px-6 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${
             activeReport === 'tid'
-              ? "bg-white text-stone-900 shadow-sm"
+              ? "bg-stone-50 text-stone-900 shadow-sm"
               : "text-stone-500 hover:text-stone-700"
           }`}
         >

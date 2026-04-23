@@ -33,7 +33,7 @@ export const CustomTooltip = ({ active, payload, label }: any) => {
     const value = payload[0].value;
     
     return (
-      <div className="p-3 border rounded-lg shadow-xl pointer-events-none z-50 bg-white border-stone-200 text-stone-900">
+      <div className="p-3 border rounded-lg shadow-xl pointer-events-none z-50 bg-stone-50 border-stone-200 text-stone-900">
         <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-stone-400">{name}</p>
         <p className="text-xs font-bold">{value} oppdrag</p>
       </div>
@@ -175,7 +175,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ jobs, todayEvent
           label="Totalt antall ordre"
           value={totalOrders}
           subValue={unassignedCount > 0 ? <span className="text-red-600">({unassignedCount} Ikke Fordelt)</span> : undefined}
-          color="bg-white"
+          color="bg-stone-50"
           onClick={() => onNavigateToBrowse?.('all')}
         />
         <StatCard 

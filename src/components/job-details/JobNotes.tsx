@@ -33,7 +33,7 @@ export const JobNotes: React.FC<JobNotesProps> = ({
   const { theme } = useTheme();
 
   return (
-    <section className="border rounded-2xl shadow-sm overflow-hidden transition-colors bg-white border-stone-200">
+    <section className="border rounded-2xl shadow-sm overflow-hidden transition-colors bg-stone-50 border-stone-200">
       <div className="p-6 border-b flex items-center justify-between bg-stone-50/50 border-stone-100">
         <h2 className="text-xs font-serif font-bold uppercase tracking-widest flex items-center gap-2 text-text-primary">
           <MessageSquare className="w-4 h-4 text-text-muted" />

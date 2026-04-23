@@ -53,7 +53,7 @@ export const MobileStats: React.FC<MobileStatsProps> = ({ jobs }) => {
           onClick={() => setActiveChart('location')}
           className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${
             activeChart === 'location' 
-              ? 'bg-white text-stone-900 shadow-sm' 
+              ? 'bg-stone-50 text-stone-900 shadow-sm' 
               : 'text-stone-500'
           }`}
         >
@@ -63,7 +63,7 @@ export const MobileStats: React.FC<MobileStatsProps> = ({ jobs }) => {
           onClick={() => setActiveChart('type')}
           className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${
             activeChart === 'type' 
-              ? 'bg-white text-stone-900 shadow-sm' 
+              ? 'bg-stone-50 text-stone-900 shadow-sm' 
               : 'text-stone-500'
           }`}
         >
@@ -71,7 +71,7 @@ export const MobileStats: React.FC<MobileStatsProps> = ({ jobs }) => {
         </button>
       </div>
 
-      <Card padding="sm" className="bg-white">
+      <Card padding="sm" className="bg-stone-50">
         {activeChart === 'location' ? (
           <div className="space-y-4">
             <div className="flex items-center gap-2">

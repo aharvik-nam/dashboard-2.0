@@ -28,7 +28,7 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ name, type, props, jobId, 
               href={museumPlusLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 transition-all rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border bg-white border-stone-200 text-text-secondary hover:text-text-primary hover:border-stone-400"
+              className="flex items-center gap-1.5 px-3 py-1.5 transition-all rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border bg-stone-50 border-stone-200 text-text-secondary hover:text-text-primary hover:border-stone-400"
             >
               <ExternalLink className="w-3 h-3" />
               MuseumPlus
@@ -39,7 +39,7 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ name, type, props, jobId, 
               href={hubspotLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 transition-all rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border bg-white border-stone-200 text-text-secondary hover:text-text-primary hover:border-stone-400"
+              className="flex items-center gap-1.5 px-3 py-1.5 transition-all rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border bg-stone-50 border-stone-200 text-text-secondary hover:text-text-primary hover:border-stone-400"
             >
               <ExternalLink className="w-3 h-3" />
               HubSpot
@@ -53,7 +53,7 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ name, type, props, jobId, 
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 transition-all rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border bg-white border-stone-200 text-text-secondary hover:text-text-primary hover:border-stone-400"
+              className="flex items-center gap-1.5 px-3 py-1.5 transition-all rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border bg-stone-50 border-stone-200 text-text-secondary hover:text-text-primary hover:border-stone-400"
               title={link.url}
             >
               <Globe className="w-3 h-3" />

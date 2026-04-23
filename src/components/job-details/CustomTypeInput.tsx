@@ -41,7 +41,7 @@ export const CustomTypeInput: React.FC<CustomTypeInputProps> = ({
           placeholder="F.eks. 'Foto av ramme', 'Detaljfoto av signatur'..."
           defaultValue={customType || ""}
           onBlur={(e) => saveCustomType(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all bg-white"
+          className="flex-1 px-4 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all bg-stone-50"
           style={{ 
             borderColor: annetBg + '60',
             '--tw-ring-color': annetBg + '40'

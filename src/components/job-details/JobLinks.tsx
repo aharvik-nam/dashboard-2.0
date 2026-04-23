@@ -96,7 +96,7 @@ export const JobLinks: React.FC<JobLinksProps> = ({
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       placeholder="F.eks. 'Arrangement-side', 'Omtale'..."
-                      className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400 bg-white"
+                      className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400 bg-stone-50"
                     />
                   </div>
                   <div className="space-y-1">
@@ -107,7 +107,7 @@ export const JobLinks: React.FC<JobLinksProps> = ({
                       onChange={(e) => setNewUrl(e.target.value)}
                       placeholder="https://..."
                       required
-                      className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400 bg-white"
+                      className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-400 bg-stone-50"
                     />
                   </div>
                   <div className="flex gap-2 pt-1">
@@ -121,7 +121,7 @@ export const JobLinks: React.FC<JobLinksProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowAddForm(false)}
-                      className="px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-stone-200 hover:bg-white transition-all"
+                      className="px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-stone-200 hover:bg-stone-50 transition-all"
                     >
                       Avbryt
                     </button>
@@ -141,7 +141,7 @@ export const JobLinks: React.FC<JobLinksProps> = ({
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-between p-4 border rounded-lg transition-all shadow-sm bg-white border-stone-200 text-text-primary hover:bg-stone-50"
+                      className="flex-1 flex items-center justify-between p-4 border rounded-lg transition-all shadow-sm bg-stone-50 border-stone-200 text-text-primary hover:bg-stone-50"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <Globe className="w-5 h-5 shrink-0 text-stone-400" />
@@ -188,7 +188,7 @@ export const JobLinks: React.FC<JobLinksProps> = ({
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4 border rounded-lg transition-all shadow-sm group bg-white border-stone-200 text-text-primary hover:bg-stone-50"
+                  className="flex items-center justify-between p-4 border rounded-lg transition-all shadow-sm group bg-stone-50 border-stone-200 text-text-primary hover:bg-stone-50"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <ExternalLink className="w-5 h-5 shrink-0 text-text-muted" />

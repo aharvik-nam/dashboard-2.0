@@ -94,7 +94,7 @@ export const ColorsTab: React.FC<ColorsTabProps> = ({
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {colorGroups.map((group) => (
-          <Card key={group.name} className="bg-white">
+          <Card key={group.name} className="bg-stone-50">
             <div className="mb-4 border-b border-stone-100 pb-2 flex items-center justify-between">
               <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">{group.name}</h3>
               <InfoIcon className="w-3 h-3 text-stone-300" title={group.description} />
@@ -125,7 +125,7 @@ export const ColorsTab: React.FC<ColorsTabProps> = ({
         ))}
       </div>
 
-      <Card className="bg-white">
+      <Card className="bg-stone-50">
         <div className="mb-6 border-b border-stone-100 pb-2">
           <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">Paletter (Lokasjon & Type)</h3>
         </div>

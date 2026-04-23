@@ -81,52 +81,15 @@ html {
 }
 
 
-/* ── 3. DARK MODE OVERRIDES ──────────────────────────────────────────────── */
+/* ── 3. DARK MODE ────────────────────────────────────────────────────────── */
 /*
-  When ThemeContext adds the `dark` class to <html>, these variables override
-  the light defaults. The @theme block above maps Tailwind colors through these
-  variables, so every bg-stone-* / text-stone-* class flips automatically.
+  Dark mode is driven entirely by ThemeContext: when darkMode is on, it writes
+  DARK_OVERRIDES to --app-* CSS variables via JS. Tailwind's bg-stone-* /
+  text-stone-* classes read those variables through the @theme mappings above.
+  Only need color-scheme here for native browser controls (scrollbars, inputs).
 */
 
 html.dark {
-  /* Stone palette — warm darks mirroring the light stone palette */
-  --app-stone-50:  #141210;
-  --app-stone-100: #1c1917;
-  --app-stone-200: #28231e;
-  --app-stone-300: #3a3330;
-  --app-stone-400: #5a5450;
-  --app-stone-500: #78716c;
-  --app-stone-600: #a8a29e;
-  --app-stone-700: #c8c2bc;
-  --app-stone-800: #dedad5;
-  --app-stone-900: #eeeae5;
-  --app-stone-950: #f5f2ee;
-
-  /* Semantic text */
-  --app-text-color-primary:   #eeeae5;
-  --app-text-color-secondary: #a8a29e;
-  --app-text-color-muted:     #5a5450;
-  --app-text-color-inverted:  #141210;
-
-  /* Header & Navigation */
-  --app-header-bg:     #1c1917;
-  --app-header-border: #28231e;
-  --app-nav-bg:        rgba(40, 35, 30, 0.8);
-  --app-nav-border:    rgba(255, 255, 255, 0.06);
-
-  /* Status / deadline colors — slightly brighter for dark bg */
-  --app-status-critical: #F8C761;
-  --app-status-overdue:  #F8A994;
-  --app-status-within:   #6BBFB5;
-
-  /* Report accents — bumped brightness for dark bg */
-  --app-report-purple: #7B72D4;
-  --app-report-teal:   #2E9E7A;
-  --app-report-coral:  #C05535;
-  --app-report-amber:  #B07020;
-  --app-report-green:  #2EC48F;
-  --app-report-blue:   #3381C5;
-
   color-scheme: dark;
 }
 

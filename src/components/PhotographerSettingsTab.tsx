@@ -75,7 +75,7 @@ export const PhotographerSettingsTab: React.FC<PhotographerSettingsTabProps> = (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Sidebar: List of photographers */}
-        <Card className="bg-white md:col-span-1">
+        <Card className="bg-stone-50 md:col-span-1">
           <div className="mb-4 border-b border-stone-100 pb-2">
             <h3 className="text-[10px] font-serif font-black uppercase tracking-widest text-stone-900">
               Fotografer
@@ -106,18 +106,18 @@ export const PhotographerSettingsTab: React.FC<PhotographerSettingsTabProps> = (
         {/* Main Content: Profile Editor */}
         <div className="md:col-span-2">
           {!selectedOwner ? (
-            <Card className="bg-white h-full flex items-center justify-center min-h-[300px]">
+            <Card className="bg-stone-50 h-full flex items-center justify-center min-h-[300px]">
               <div className="text-center text-stone-400 space-y-2">
                 <User className="w-8 h-8 mx-auto opacity-50" />
                 <p className="text-sm">Velg en fotograf for å redigere profilen</p>
               </div>
             </Card>
           ) : loading ? (
-            <Card className="bg-white h-full flex items-center justify-center min-h-[300px]">
+            <Card className="bg-stone-50 h-full flex items-center justify-center min-h-[300px]">
               <Loader2 className="w-6 h-6 animate-spin text-stone-400" />
             </Card>
           ) : profile ? (
-            <Card className="bg-white space-y-6">
+            <Card className="bg-stone-50 space-y-6">
               <div className="flex items-center justify-between border-b border-stone-100 pb-4">
                 <div>
                   <h3 className="text-lg font-serif font-black text-stone-900">{profile.name}</h3>
@@ -144,7 +144,7 @@ export const PhotographerSettingsTab: React.FC<PhotographerSettingsTabProps> = (
                     value={profile.strengths || ""}
                     onChange={(e) => handleChange("strengths", e.target.value)}
                     placeholder="F.eks. Rask, god på portretter, strukturert..."
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-stone-50 focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
                   />
                 </div>
 
@@ -156,7 +156,7 @@ export const PhotographerSettingsTab: React.FC<PhotographerSettingsTabProps> = (
                     value={profile.weaknesses || ""}
                     onChange={(e) => handleChange("weaknesses", e.target.value)}
                     placeholder="F.eks. Liker ikke store grupper, trenger mer tid på redigering..."
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-stone-50 focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
                   />
                 </div>
 
@@ -168,7 +168,7 @@ export const PhotographerSettingsTab: React.FC<PhotographerSettingsTabProps> = (
                     value={profile.experience || ""}
                     onChange={(e) => handleChange("experience", e.target.value)}
                     placeholder="F.eks. 5 års erfaring, jobbet mye med bryllup..."
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-stone-50 focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
                   />
                 </div>
 
@@ -180,7 +180,7 @@ export const PhotographerSettingsTab: React.FC<PhotographerSettingsTabProps> = (
                     value={profile.expertise || ""}
                     onChange={(e) => handleChange("expertise", e.target.value)}
                     placeholder="F.eks. Arkitektur, makro, dronefoto..."
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:bg-stone-50 focus:ring-2 focus:ring-stone-900/5 transition-all outline-none min-h-[80px]"
                   />
                 </div>
               </div>

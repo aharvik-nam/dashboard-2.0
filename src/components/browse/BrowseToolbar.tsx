@@ -59,7 +59,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             placeholder="Søk i oppdrag, NMID, lokasjon..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 rounded-lg text-sm focus:outline-none transition-all bg-white border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-200 shadow-sm"
+            className="w-full pl-10 pr-10 py-2 rounded-lg text-sm focus:outline-none transition-all bg-stone-50 border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-200 shadow-sm"
           />
           {searchTerm && (
             <button
@@ -78,20 +78,20 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-xs font-bold uppercase tracking-widest whitespace-nowrap ${
               showFilters || selectedLocation.length > 0 || selectedType.length > 0 || dateFilter !== 'all'
                 ? "bg-stone-900 text-white border-stone-900"
-                : "bg-white text-stone-500 border-stone-200 hover:border-stone-300 shadow-sm"
+                : "bg-stone-50 text-stone-500 border-stone-200 hover:border-stone-300 shadow-sm"
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
             {showFilters ? "SKJUL FILTRE" : "FILTRER"}
             {(selectedLocation.length + selectedType.length + (dateFilter !== 'all' ? 1 : 0)) > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[8px] bg-white/20">
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[8px] bg-stone-50/20">
                 {(selectedLocation.length + selectedType.length + (dateFilter !== 'all' ? 1 : 0))}
               </span>
             )}
           </button>
 
           {/* Owner Filter Dropdown */}
-          <div className="flex items-center gap-2 border rounded-lg px-3 py-2 shrink-0 transition-colors bg-white border-stone-200 shadow-sm hover:border-stone-300">
+          <div className="flex items-center gap-2 border rounded-lg px-3 py-2 shrink-0 transition-colors bg-stone-50 border-stone-200 shadow-sm hover:border-stone-300">
             <User className="w-3.5 h-3.5 transition-colors text-stone-400" />
             
             {/* Desktop Select */}
@@ -116,7 +116,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
           </div>
 
           {/* NB Filter */}
-          <div className="flex items-center gap-2 border rounded-lg px-3 py-2 shrink-0 transition-colors bg-white border-stone-200 shadow-sm hover:border-stone-300">
+          <div className="flex items-center gap-2 border rounded-lg px-3 py-2 shrink-0 transition-colors bg-stone-50 border-stone-200 shadow-sm hover:border-stone-300">
             <input
               type="checkbox"
               id="browse-nb-filter"
@@ -138,7 +138,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
       <div className="flex items-center gap-2">
         <button
           onClick={() => handleSort('deadline')}
-          className="hidden md:flex items-center gap-2 px-4 py-2 border rounded-lg text-xs font-bold uppercase tracking-widest transition-colors whitespace-nowrap bg-white border-stone-200 text-stone-500 hover:bg-stone-50 shadow-sm"
+          className="hidden md:flex items-center gap-2 px-4 py-2 border rounded-lg text-xs font-bold uppercase tracking-widest transition-colors whitespace-nowrap bg-stone-50 border-stone-200 text-stone-500 hover:bg-stone-50 shadow-sm"
         >
           <Calendar className="w-3.5 h-3.5 text-stone-400" />
           <span>FRIST {sortConfig.direction === 'asc' ? 'STIGENDE' : 'SYNKENDE'}</span>
@@ -150,7 +150,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             onClick={() => setLayout("grid")}
             className={`p-1.5 rounded-md transition-all ${
               layout === "grid"
-                ? "bg-white text-stone-900 shadow-sm"
+                ? "bg-stone-50 text-stone-900 shadow-sm"
                 : "text-stone-500 hover:text-stone-900"
             }`}
             title="Rutenett"
@@ -161,7 +161,7 @@ export const BrowseToolbar: React.FC<BrowseToolbarProps> = ({
             onClick={() => setLayout("list")}
             className={`p-1.5 rounded-md transition-all ${
               layout === "list"
-                ? "bg-white text-stone-900 shadow-sm"
+                ? "bg-stone-50 text-stone-900 shadow-sm"
                 : "text-stone-500 hover:text-stone-900"
             }`}
             title="Liste"

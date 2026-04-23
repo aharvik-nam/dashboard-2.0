@@ -526,7 +526,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onChange={(e) => setSearchTerm?.(e.target.value)}
                 className="
                   w-full pl-11 pr-10 py-3 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all focus:outline-none focus:ring-2
-                  bg-white border-stone-200 text-stone-900 placeholder:text-stone-400 focus:ring-stone-900/10 shadow-sm
+                  bg-stone-50 border-stone-200 text-stone-900 placeholder:text-stone-400 focus:ring-stone-900/10 shadow-sm
                 "
               />
               {searchTerm && (
@@ -545,7 +545,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <select
                   value={selectedOwner || "all"}
                   onChange={(e) => setSelectedOwner?.(e.target.value)}
-                  className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
+                  className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
                 >
                   <option value="all">Alle Fotografer</option>
                   {uniqueOwners.map(owner => (
@@ -554,7 +554,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </select>
                 <button
                   onClick={() => setShowOwnerSheet(true)}
-                  className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 shadow-sm whitespace-nowrap"
+                  className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 shadow-sm whitespace-nowrap"
                 >
                   {selectedOwner && selectedOwner !== 'all' ? selectedOwner : 'Alle Fotografer'}
                 </button>
@@ -565,7 +565,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <select
                   value={selectedLocations[0] || "all"}
                   onChange={(e) => setSelectedLocations?.(e.target.value === "all" ? [] : [e.target.value])}
-                  className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
+                  className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
                 >
                   <option value="all">Alle lokasjoner</option>
                   {uniqueLocations.map(loc => (
@@ -574,14 +574,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </select>
                 <button
                   onClick={() => setShowLocationSheet(true)}
-                  className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 shadow-sm whitespace-nowrap"
+                  className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 shadow-sm whitespace-nowrap"
                 >
                   {selectedLocations.length > 0 ? selectedLocations[0] : 'Alle lokasjoner'}
                 </button>
               </div>
 
               {/* NB Filter */}
-              <div className="flex items-center gap-2 px-4 py-3 border border-stone-200 rounded-xl bg-white shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-3 border border-stone-200 rounded-xl bg-stone-50 shadow-sm">
                 <input
                   type="checkbox"
                   id="dashboard-nb-filter"
@@ -639,7 +639,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       />
 
       {/* Trend Overview (Full Width) */}
-      <section className="p-6 rounded-2xl border bg-white border-stone-200 shadow-sm">
+      <section className="p-6 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm">
         <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-stone-400">Frist-oversikt</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-6">
@@ -712,7 +712,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
+                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
               >
                 <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
                 <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
@@ -779,7 +779,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-white z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
+                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
               >
                 <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
                 <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
@@ -837,7 +837,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Main Content Column */}
         <div className="xl:col-span-2 space-y-8">
           {showNBOnly ? (
-            <section className="p-6 rounded-2xl border bg-white border-stone-200 shadow-sm border-t-4" style={{ borderTopColor: '#7a68a8' }}>
+            <section className="p-6 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm border-t-4" style={{ borderTopColor: '#7a68a8' }}>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
@@ -858,7 +858,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ) : (
             <>
               {/* Dagens fokus */}
-          <section className="p-6 rounded-2xl border bg-white border-stone-200 shadow-sm">
+          <section className="p-6 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400">Dagens fokus</h3>
               <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-stone-100 text-stone-500">
@@ -873,7 +873,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </section>
 
           {/* Forfaller denne uken */}
-          <section className="p-6 rounded-2xl border bg-white border-stone-200 shadow-sm">
+          <section className="p-6 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400">Forfaller denne uken</h3>
               <button 
@@ -906,7 +906,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </section>
 
           {/* Jobber til fordeling */}
-          <section className="p-6 rounded-2xl border bg-white border-stone-200 shadow-sm">
+          <section className="p-6 rounded-2xl border bg-stone-50 border-stone-200 shadow-sm">
             <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-stone-400">Jobber til fordeling</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {distributionJobs.length > 0 ? distributionJobs.map(job => (

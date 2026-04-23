@@ -88,7 +88,7 @@ export const JobsList: React.FC<JobsListProps> = ({
               </h3>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-3">
                 <div 
-                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-sm bg-white/50 text-text-muted"
+                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-sm bg-stone-50/50 text-text-muted"
                   title="Frist for fotografering"
                 >
                   <Clock className="w-3 h-3" />
@@ -107,7 +107,7 @@ export const JobsList: React.FC<JobsListProps> = ({
 
                 {job.owner_names && job.owner_names.length > 0 && (
                   <div 
-                    className="flex items-center gap-1 text-[10px] truncate backdrop-blur-sm px-2 py-1 rounded-md bg-white/50 text-[#4d4d4d]"
+                    className="flex items-center gap-1 text-[10px] truncate backdrop-blur-sm px-2 py-1 rounded-md bg-stone-50/50 text-[#4d4d4d]"
                   >
                     <User className="w-3 h-3" />
                     <span className="truncate max-w-[80px]">{job.owner_names[0]}</span>
@@ -115,7 +115,7 @@ export const JobsList: React.FC<JobsListProps> = ({
                 )}
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors backdrop-blur-sm bg-white/50 text-text-muted group-hover:text-text-secondary">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center transition-colors backdrop-blur-sm bg-stone-50/50 text-text-muted group-hover:text-text-secondary">
                 <ChevronRight className="w-4 h-4" />
             </div>
           </motion.button>

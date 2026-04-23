@@ -55,7 +55,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
               onChange={(e) => setSearchTerm?.(e.target.value)}
               className="
                 w-full pl-11 pr-10 py-3 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all focus:outline-none focus:ring-2
-                bg-white border-stone-200 text-stone-900 placeholder:text-stone-400 focus:ring-stone-900/10 shadow-sm
+                bg-stone-50 border-stone-200 text-stone-900 placeholder:text-stone-400 focus:ring-stone-900/10 shadow-sm
               "
             />
             {searchTerm && (
@@ -73,7 +73,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
               <select
                 value={selectedOwner || "all"}
                 onChange={(e) => setSelectedOwner?.(e.target.value)}
-                className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
+                className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
               >
                 <option value="all">Alle Fotografer</option>
                 {uniqueOwners.map(owner => (
@@ -82,7 +82,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
               </select>
               <button
                 onClick={() => setShowOwnerSheet(true)}
-                className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 shadow-sm whitespace-nowrap"
+                className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 shadow-sm whitespace-nowrap"
               >
                 {selectedOwner && selectedOwner !== 'all' ? selectedOwner : 'Alle Fotografer'}
               </button>
@@ -92,7 +92,7 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
               <select
                 value={selectedLocations[0] || "all"}
                 onChange={(e) => setSelectedLocations?.(e.target.value === "all" ? [] : [e.target.value])}
-                className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
+                className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
               >
                 <option value="all">Alle lokasjoner</option>
                 {uniqueLocations.map(loc => (
@@ -101,14 +101,14 @@ export const ArchiveHeader: React.FC<ArchiveHeaderProps> = ({
               </select>
               <button
                 onClick={() => setShowLocationSheet(true)}
-                className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white text-stone-900 shadow-sm whitespace-nowrap"
+                className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-50 text-stone-900 shadow-sm whitespace-nowrap"
               >
                 {selectedLocations.length > 0 ? selectedLocations[0] : 'Alle lokasjoner'}
               </button>
             </div>
 
             {/* NB Filter */}
-            <div className="flex items-center gap-2 px-4 py-3 border border-stone-200 rounded-xl bg-white shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-3 border border-stone-200 rounded-xl bg-stone-50 shadow-sm">
               <input
                 type="checkbox"
                 id="archive-nb-filter"

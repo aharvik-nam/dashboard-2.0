@@ -24,7 +24,7 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ isOpen, on
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl"
+            className="relative max-w-4xl w-full bg-stone-50 rounded-2xl overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-stone-100 flex items-center justify-between">

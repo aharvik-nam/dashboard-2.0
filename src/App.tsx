@@ -260,7 +260,7 @@ function AppContent() {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                   mainView === "dashboard" && !selectedJob
-                    ? "bg-white text-stone-900 shadow-sm"
+                    ? "bg-stone-50 text-stone-900 shadow-sm"
                     : "text-stone-500 hover:text-stone-900"
                 }`}
               >
@@ -274,7 +274,7 @@ function AppContent() {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                   mainView === "browse" && !selectedJob
-                    ? "bg-white text-stone-900 shadow-sm"
+                    ? "bg-stone-50 text-stone-900 shadow-sm"
                     : "text-stone-500 hover:text-stone-900"
                 }`}
               >
@@ -288,7 +288,7 @@ function AppContent() {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                   mainView === "calendar" && !selectedJob
-                    ? "bg-white text-stone-900 shadow-sm"
+                    ? "bg-stone-50 text-stone-900 shadow-sm"
                     : "text-stone-500 hover:text-stone-900"
                 }`}
               >
@@ -302,7 +302,7 @@ function AppContent() {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                   mainView === "settings"
-                    ? "bg-white text-stone-900 shadow-sm"
+                    ? "bg-stone-50 text-stone-900 shadow-sm"
                     : "text-stone-500 hover:text-stone-900"
                 }`}
                 title="Innstillinger"
@@ -318,7 +318,7 @@ function AppContent() {
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                   mainView === "archive" && !selectedJob
-                    ? "bg-white text-stone-900 shadow-sm"
+                    ? "bg-stone-50 text-stone-900 shadow-sm"
                     : "text-stone-500 hover:text-stone-900"
                 }`}
               >
@@ -374,7 +374,7 @@ function AppContent() {
         >
           {/* Mobile Back Button */}
           {selectedJob && (
-            <div className="md:hidden p-3 border-b sticky top-0 z-40 flex items-center shadow-sm bg-white border-stone-200">
+            <div className="md:hidden p-3 border-b sticky top-0 z-40 flex items-center shadow-sm bg-stone-50 border-stone-200">
               <button 
                 onClick={handleBackToList} 
                 className="flex items-center gap-2 px-2 py-1 rounded-md active:bg-stone-100 text-stone-900"
