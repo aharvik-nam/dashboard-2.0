@@ -110,9 +110,11 @@ const DARK_OVERRIDES: Partial<ThemeColors> = {
   headerBorder: "#28231e",
   navBg:   "rgba(40, 35, 30, 0.85)",
   navBorder: "rgba(255, 255, 255, 0.06)",
-  statusCritical: "#F8C761",
-  statusOverdue:  "#F8A994",
-  statusWithin:   "#6BBFB5",
+  statusCritical: "#DDA84A",
+  statusOverdue:  "#D06858",
+  statusWithin:   "#60A87A",
+  statusProgress: "#6A96C0",
+  statusNB:       "#9B7EC0",
   reportPurple: "#7B72D4",
   reportTeal:   "#2E9E7A",
   reportCoral:  "#C05535",
@@ -137,29 +139,29 @@ const DEFAULT_THEME: ThemeColors = {
   brandInternal: "#7BB2D9",
   brandExternal: "#8B687F",
 
-  // Deadlines
-  statusCritical: "#C0392B",
-  statusOverdue: "#B7762E",
-  statusWithin: "#2E7D4F",
-  statusProgress: "#3B82F6",
-  statusNB: "#DC2626",
+  // Deadlines — urgency scale: brick red → amber → sage green
+  statusCritical: "#C49040",
+  statusOverdue: "#B85448",
+  statusWithin: "#4E8A64",
+  statusProgress: "#5580A8",
+  statusNB: "#7B5EA0",
 
   // Tags
   tagInternal: "#78716c", // stone-500
   tagExternal: "#292524", // stone-800
   tagDefault: "#a8a29e",  // stone-400
 
-  // Palettes
+  // Palettes — locations: cool tones (spatial), types: warm earth tones (categorical)
   locationPalette: [
-    "#B4BD9B", "#BC455A", "#FDBA77", "#F6CF98", 
-    "#81BDC3", "#FDF8EC", "#F9D6D3", "#CCD5C3",
-    "#E2ECE9", "#DFE7FD", "#FDE2E4", "#FFF1E6"
+    "#7AA8C0", "#5E9E8E", "#88A0BE", "#6EA888",
+    "#7EB8C8", "#5E88A8", "#9BA0B8", "#6E98A8",
+    "#78B0A0", "#8AA8C0", "#5E8898", "#88B0A8"
   ],
   typePalette: [
-    "#EAE4E9", "#FFF1E6", "#FDE2E4", "#FAD2E1", 
-    "#E2ECE9", "#BEE1E6", "#F0EFEB", "#DFE7FD", 
-    "#CDDAFD", "#D7E1FD", "#E2F0CB", "#C7CEEA",
-    "#FFDAC1", "#FF9AA2", "#B5EAD7", "#E0BBE4"
+    "#C8A880", "#B89070", "#C4A090", "#B0A870",
+    "#C8B890", "#C09878", "#B8A888", "#B8C0A0",
+    "#C0B098", "#B89888", "#C8B078", "#B0B898",
+    "#C0A898", "#B8A070", "#C4B0A0", "#A8B8A0"
   ],
 
   // Typography
