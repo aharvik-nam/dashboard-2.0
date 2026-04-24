@@ -1,14 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { Job } from "../types";
-import { ArchiveList } from "./archive/ArchiveList";
-import { ArchiveStatisticsTab } from "./archive/ArchiveStatisticsTab";
-import { ArchiveHeader } from "./archive/ArchiveHeader";
-import { formatDate, splitTitle, getLocationIndex, getTypeIndex, getPaletteColor, formatType, formatLocation, getJobDate, isInternJob, isExternJob } from "../utils/jobUtils";
+import { formatDate, splitTitle, getJobDate, isInternJob, isExternJob } from "../utils/jobUtils";
 import { useTheme } from "../context/ThemeContext";
-import { Search, RefreshCw, Clock, MapPin, Camera, User, Database, Filter, X } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { Card } from "./ui/Card";
-import { Badge } from "./ui/Badge";
+import { useJobData } from "../context/JobDataContext";
+import { ArchiveStatisticsTab } from "./archive/ArchiveStatisticsTab";
+import { DopPill } from "./dop/DopPrimitives";
+
+// ─── Design constants ────────────────────────────────────────────────────────
+const SIDE  = '#2a251c';
+const ACCENT = '#d97757';
+const MONO  = '"JetBrains Mono","IBM Plex Mono",ui-monospace,monospace';
+const SANS  = '"Inter","Helvetica Neue",Helvetica,Arial,sans-serif';
+const S_INK  = '#efece4';
+const S_DIM  = 'rgba(239,236,228,0.55)';
+const S_RULE = 'rgba(239,236,228,0.15)';
+
+const PAGE_SIZE = 40;
 
 interface ArchiveViewProps {
   jobs: Job[];
@@ -35,394 +42,368 @@ interface ArchiveViewProps {
   clearFilters?: () => void;
 }
 
-export const ArchiveView: React.FC<ArchiveViewProps> = ({ 
-  jobs, 
-  onSelectJob, 
-  selectedOwner, 
+// ─── Archive row ─────────────────────────────────────────────────────────────
+function ArkivRow({ job, cc, onSelect, stripe }: {
+  job: Job;
+  cc: { bg: string; panel: string; ink: string; ink2: string; ink3: string; hair: string; ok: string; okBg: string };
+  onSelect: (j: Job) => void;
+  stripe: boolean;
+}) {
+  const [h, setH] = useState(false);
+  const { jobOverrides } = useJobData();
+  const { name, type: jobType } = splitTitle(job.title);
+  const props = job.all_properties || {};
+  const closed = formatDate(props.closedate || props.hs_closed_won_date || '');
+  const photographer = props.hubspot_owner_assignee || props.photographer_name || '–';
+  const nbSend = jobOverrides[job.id]?.sendToNB;
+  const isIntern = isInternJob(job);
+  const typeLbl = isIntern ? 'INTERN' : isExternJob(job) ? 'EKSTERN' : '';
+
+  return (
+    <div
+      onClick={() => onSelect(job)}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '120px 1fr 120px 100px 80px 80px',
+        gap: 0,
+        padding: '9px 14px',
+        borderBottom: `1px solid ${cc.hair}`,
+        fontSize: 13,
+        alignItems: 'center',
+        background: h ? cc.bg : stripe ? 'rgba(0,0,0,0.015)' : 'transparent',
+        cursor: 'pointer',
+      }}
+    >
+      {/* ID */}
+      <div style={{ fontFamily: MONO, fontSize: 11, color: cc.ink2 }}>{job.id}</div>
+      {/* Title */}
+      <div>
+        <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+        {jobType && <div style={{ fontFamily: MONO, fontSize: 10.5, color: cc.ink3, marginTop: 1 }}>{jobType}</div>}
+      </div>
+      {/* Photographer */}
+      <div style={{ fontSize: 12, color: cc.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{photographer}</div>
+      {/* Closed */}
+      <div style={{ fontFamily: MONO, fontSize: 11, color: cc.ink2 }}>{closed || '–'}</div>
+      {/* Type */}
+      <div>
+        {typeLbl && <DopPill bg={cc.bg} fg={cc.ink2}>{typeLbl}</DopPill>}
+        {nbSend && <DopPill bg={`${ACCENT}1a`} fg={ACCENT} bold style={{ marginLeft: 4 }}>NB</DopPill>}
+      </div>
+      {/* Status */}
+      <div style={{ textAlign: 'right' }}>
+        <DopPill bg={cc.okBg} fg={cc.ok} bold>FERDIG</DopPill>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
+export const ArchiveView: React.FC<ArchiveViewProps> = ({
+  jobs,
+  onSelectJob,
+  selectedOwner,
   setSelectedOwner,
   uniqueOwners = [],
   selectedLocations = [],
   setSelectedLocations,
   uniqueLocations = [],
-  selectedYear = "all",
+  selectedYear = 'all',
   setSelectedYear,
   uniqueYears = [],
   showNBOnly = false,
   setShowNBOnly,
   loading = false,
-  searchTerm = "",
+  searchTerm = '',
   setSearchTerm,
   onRefresh,
   onSync,
   isSyncing = false,
   archiveTab,
   setArchiveTab,
-  clearFilters
+  clearFilters,
 }) => {
   const { theme } = useTheme();
-  const [showOwnerSheet, setShowOwnerSheet] = useState(false);
-  const [showLocationSheet, setShowLocationSheet] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
 
-  // New filters
-  const [deadlineFilter, setDeadlineFilter] = useState<"all" | "overdue" | "ontime">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "intern" | "ekstern" | "ukjent">("all");
-  const [itemsFilter, setItemsFilter] = useState<"all" | "0" | "1" | "2-5" | ">5">("all");
-
-  const title = selectedOwner && selectedOwner !== "all" 
-    ? `Arkiv for ${selectedOwner}`
-    : "Arkiv for Seksjon Foto";
-
-  const isAnyFilterActive = useMemo(() => {
-    return (selectedOwner && selectedOwner !== "all") || 
-           (selectedLocations && selectedLocations.length > 0) || 
-           (selectedYear && selectedYear !== "all") || 
-           (searchTerm && searchTerm !== "") || 
-           deadlineFilter !== "all" || 
-           typeFilter !== "all" || 
-           itemsFilter !== "all";
-  }, [selectedOwner, selectedLocations, selectedYear, searchTerm, deadlineFilter, typeFilter, itemsFilter]);
-
-  const resetFilters = () => {
-    if (clearFilters) {
-      clearFilters();
-    } else {
-      setSelectedOwner?.("all");
-      setSelectedLocations?.([]);
-      setSelectedYear?.("all");
-      setSearchTerm?.("");
-    }
-    setDeadlineFilter("all");
-    setTypeFilter("all");
-    setItemsFilter("all");
+  const cc = {
+    bg:    theme.stone50,
+    panel: theme.stone100,
+    ink:   theme.textColorPrimary,
+    ink2:  theme.textColorSecondary,
+    ink3:  theme.textColorMuted,
+    hair:  theme.stone200,
+    ok:    theme.statusWithin,
+    okBg:  `${theme.statusWithin}1a`,
+    critical: theme.statusCritical,
   };
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
-      const props = job.all_properties || {};
-      
-      // Deadline filter
-      if (deadlineFilter !== "all") {
-        const deadlineStr = getJobDate(job); // Use getJobDate to get the correct deadline
-        if (!deadlineStr) return false;
-        const deadlineDate = new Date(deadlineStr);
-        const diffTime = new Date().getTime() - deadlineDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (deadlineFilter === "overdue" && diffDays <= 0) return false;
-        if (deadlineFilter === "ontime" && diffDays > 0) return false;
-      }
+  // Stats derived from all jobs passed in
+  const totalPhotos = useMemo(() => {
+    return jobs.reduce((sum, j) => {
+      const n = parseInt((j.all_properties || {}).hs_num_of_associated_line_items || '0', 10);
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+  }, [jobs]);
 
-      // Type filter
-      if (typeFilter !== "all") {
-        const isIntern = isInternJob(job);
-        const isExtern = isExternJob(job);
-        
-        if (typeFilter === "intern" && !isIntern) return false;
-        if (typeFilter === "ekstern" && !isExtern) return false;
-        if (typeFilter === "ukjent" && (isIntern || isExtern)) return false;
-      }
+  const onTimeCount = useMemo(() => {
+    return jobs.filter(j => {
+      const ds = getJobDate(j);
+      if (!ds) return false;
+      const closed = (j.all_properties || {}).closedate;
+      if (!closed) return true;
+      return new Date(closed) <= new Date(ds);
+    }).length;
+  }, [jobs]);
 
-      // Items filter
-      if (itemsFilter !== "all") {
-        const numItems = parseInt(props.hs_num_of_associated_line_items || "0", 10);
-        if (itemsFilter === "0" && numItems !== 0) return false;
-        if (itemsFilter === "1" && numItems !== 1) return false;
-        if (itemsFilter === "2-5" && (numItems < 2 || numItems > 5)) return false;
-        if (itemsFilter === ">5" && numItems <= 5) return false;
-      }
+  const onTimePct = jobs.length > 0 ? Math.round((onTimeCount / jobs.length) * 100) : 0;
 
-      return true;
-    });
-  }, [jobs, deadlineFilter, typeFilter, itemsFilter]);
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(jobs.length / PAGE_SIZE));
+  const pageJobs   = jobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // Reset page on filter changes
+  React.useEffect(() => { setPage(1); }, [jobs.length, selectedYear, selectedOwner, searchTerm]);
+
+  const isAnyFilterActive = (selectedOwner && selectedOwner !== 'all') ||
+    (selectedYear && selectedYear !== 'all') ||
+    (searchTerm && searchTerm !== '');
+
+  const SMALLCAP: React.CSSProperties = {
+    fontFamily: MONO, fontSize: 10, letterSpacing: '0.09em', textTransform: 'uppercase', color: cc.ink3,
+  };
 
   return (
-    <div className="p-4 md:p-10 w-full max-w-[1600px] mx-auto space-y-10 min-h-screen transition-colors duration-500">
-      
-      {/* Tabs */}
-      <div className="flex gap-4 border-b border-stone-200 pb-4">
-        <button
-          onClick={() => setArchiveTab("stats")}
-          className={`px-6 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-all ${
-            archiveTab === "stats"
-              ? "bg-stone-900 text-white shadow-md"
-              : "bg-stone-100 text-stone-500 hover:bg-stone-200"
-          }`}
-        >
-          Statistikk
-        </button>
-        <button
-          onClick={() => setArchiveTab("list")}
-          className={`px-6 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-all ${
-            archiveTab === "list"
-              ? "bg-stone-900 text-white shadow-md"
-              : "bg-stone-100 text-stone-500 hover:bg-stone-200"
-          }`}
-        >
-          Oppdragsliste
-        </button>
-      </div>
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: '100%',
+      overflow: 'hidden', background: cc.bg, color: cc.ink, fontFamily: SANS,
+    }}>
 
-      {archiveTab === "stats" ? (
-        <ArchiveStatisticsTab />
-      ) : loading ? (
-        <div className="flex flex-col items-center justify-center py-20 space-y-6">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-stone-100 border-t-stone-900 rounded-full animate-spin"></div>
-            <Database className="absolute inset-0 m-auto w-6 h-6 text-stone-900 animate-pulse" />
-          </div>
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-serif font-medium text-stone-900">Henter arkiv fra HubSpot</h3>
-            <p className="text-stone-400 max-w-xs mx-auto text-sm">
-              Dette kan ta noen sekunder da vi henter over 3000 oppdrag direkte fra kilden.
-            </p>
+      {/* ── Cmdbar ──────────────────────────────────────────────────────── */}
+      <div style={{
+        background: SIDE, color: S_INK,
+        padding: '10px 18px', flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em' }}>Arkiv · Seksjon Foto</div>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: S_DIM, marginTop: 1, letterSpacing: '0.06em' }}>
+            {jobs.length} FULLFØRTE OPPDRAG · {totalPhotos.toLocaleString('no')} BILDER
           </div>
         </div>
-      ) : (
-        <>
-          {/* Header */}
-          <ArchiveHeader
-            title={title}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedOwner={selectedOwner}
-            setSelectedOwner={setSelectedOwner}
-            uniqueOwners={uniqueOwners}
-            setShowOwnerSheet={setShowOwnerSheet}
-            selectedLocations={selectedLocations}
-            setSelectedLocations={setSelectedLocations}
-            uniqueLocations={uniqueLocations}
-            setShowLocationSheet={setShowLocationSheet}
-            showNBOnly={showNBOnly}
-            setShowNBOnly={setShowNBOnly}
-            onRefresh={onRefresh}
-            onSync={onSync}
-            isSyncing={isSyncing}
-          />
-
-      {/* Year Selector */}
-      {uniqueYears.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-stone-100">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mr-2">Velg år:</span>
+        <button
+          onClick={() => setArchiveTab(archiveTab === 'stats' ? 'list' : 'stats')}
+          style={{
+            fontFamily: MONO, fontSize: 10.5, letterSpacing: '0.08em',
+            padding: '6px 11px', border: `1px solid ${archiveTab === 'stats' ? S_INK : S_RULE}`,
+            background: archiveTab === 'stats' ? S_INK : 'transparent',
+            color: archiveTab === 'stats' ? SIDE : S_INK,
+            cursor: 'pointer', fontWeight: 600, borderRadius: 3,
+          }}
+        >
+          STATISTIKK ↗
+        </button>
+        {onSync && (
           <button
-            onClick={() => setSelectedYear?.("all")}
-            className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-              selectedYear === "all"
-                ? "bg-stone-900 text-white shadow-md"
-                : "bg-stone-100 text-stone-500 hover:bg-stone-200"
-            }`}
+            onClick={onSync}
+            disabled={isSyncing}
+            style={{
+              fontFamily: MONO, fontSize: 10.5, letterSpacing: '0.08em',
+              padding: '6px 11px', border: `1px solid ${S_RULE}`,
+              background: 'transparent', color: isSyncing ? S_DIM : S_INK,
+              cursor: isSyncing ? 'not-allowed' : 'pointer', borderRadius: 3,
+            }}
           >
-            Alle år
+            {isSyncing ? 'SYNKRONISERER…' : 'SYNKRONISER'}
           </button>
-          {uniqueYears.map(year => (
-            <button
-              key={year}
-              onClick={() => setSelectedYear?.(year)}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                selectedYear === year
-                  ? "bg-stone-900 text-white shadow-md"
-                  : "bg-stone-100 text-stone-500 hover:bg-stone-200"
-              }`}
-            >
-              {year}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Advanced Filters */}
-      <div className="flex flex-col gap-3 pb-4 border-b border-stone-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setShowFilters(!showFilters)}>
-            <Filter className="w-4 h-4 text-stone-400" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Avanserte filtre</span>
-            <Badge variant="outline" className="ml-2">{filteredJobs.length} oppdrag</Badge>
-          </div>
-          
-          {isAnyFilterActive && (
-            <button
-              onClick={resetFilters}
-              className="text-[10px] font-bold uppercase tracking-widest text-red-600 hover:text-red-700 transition-colors flex items-center gap-1.5"
-            >
-              <X className="w-3 h-3" />
-              Tøm filtre
-            </button>
-          )}
-        </div>
-        
-        {showFilters && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            className="flex flex-wrap gap-4 pt-2"
-          >
-            <div className="space-y-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Frist</span>
-              <div className="flex bg-stone-100 rounded-lg p-1">
-                {["all", "overdue", "ontime"].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setDeadlineFilter(val as any)}
-                    className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      deadlineFilter === val ? "bg-stone-50 text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
-                    }`}
-                  >
-                    {val === "all" ? "Alle" : val === "overdue" ? "Over frist" : "Innen frist"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Type</span>
-              <div className="flex bg-stone-100 rounded-lg p-1">
-                {["all", "intern", "ekstern", "ukjent"].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setTypeFilter(val as any)}
-                    className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      typeFilter === val ? "bg-stone-50 text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
-                    }`}
-                  >
-                    {val === "all" ? "Alle" : val.charAt(0).toUpperCase() + val.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Antall verk</span>
-              <div className="flex bg-stone-100 rounded-lg p-1">
-                {["all", "0", "1", "2-5", ">5"].map(val => (
-                  <button
-                    key={val}
-                    onClick={() => setItemsFilter(val as any)}
-                    className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      itemsFilter === val ? "bg-stone-50 text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
-                    }`}
-                  >
-                    {val === "all" ? "Alle" : val + " verk"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
         )}
       </div>
 
-      {/* Bottom Sheets - Mobile View */}
-      <div className="md:hidden">
-        <AnimatePresence>
-          {showOwnerSheet && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowOwnerSheet(false)}
-                className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
-              >
-                <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
-                <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
-                  <h3 className="text-lg font-serif font-bold text-stone-900">Velg fotograf</h3>
-                  <button 
-                    onClick={() => { 
-                      setSelectedOwner?.('all'); 
-                      setShowOwnerSheet(false); 
-                    }} 
-                    className="text-[10px] font-bold uppercase tracking-widest text-red-600 hover:text-red-700"
-                  >
-                    Nullstill
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="space-y-1">
-                    <button onClick={() => { setSelectedOwner?.('all'); setShowOwnerSheet(false); }} className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${(!selectedOwner || selectedOwner === 'all') ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'}`}>Alle Fotografer</button>
-                    {uniqueOwners.map(owner => (
-                      <button key={owner} onClick={() => { setSelectedOwner?.(owner); setShowOwnerSheet(false); }} className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${selectedOwner === owner ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'}`}>{owner}</button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
+      {archiveTab === 'stats' ? (
+        <div style={{ flex: 1, overflow: 'auto', padding: '18px 18px 18px' }}>
+          <ArchiveStatisticsTab />
+        </div>
+      ) : loading ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, color: cc.ink3, letterSpacing: '0.08em' }}>HENTER ARKIV FRA HUBSPOT…</div>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: cc.ink3 }}>Dette kan ta noen sekunder</div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, overflow: 'auto', padding: '14px 18px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {showLocationSheet && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowLocationSheet(false)}
-                className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
-              >
-                <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
-                <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
-                  <h3 className="text-lg font-serif font-bold text-stone-900">Velg lokasjon</h3>
-                  <button 
-                    onClick={() => { 
-                      setSelectedLocations?.([]); 
-                      setShowLocationSheet(false); 
-                    }} 
-                    className="text-[10px] font-bold uppercase tracking-widest text-red-600 hover:text-red-700"
-                  >
-                    Nullstill
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="space-y-1">
-                    <button onClick={() => { setSelectedLocations?.([]); setShowLocationSheet(false); }} className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${selectedLocations.length === 0 ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'}`}>Alle lokasjoner</button>
-                    {uniqueLocations.map(loc => (
-                      <button key={loc} onClick={() => { setSelectedLocations?.([loc]); setShowLocationSheet(false); }} className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${selectedLocations.includes(loc) ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'}`}>{loc}</button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Archive List */}
-      <section>
-        <Card className="bg-stone-50">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-stone-100">
-                <Clock className="w-4 h-4 text-stone-900" />
+          {/* ── Stat strip ──────────────────────────────────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+            {[
+              { l: 'TOTALT',  v: jobs.length,                             s: 'arkiverte oppdrag' },
+              { l: 'BILDER',  v: totalPhotos.toLocaleString('no'),         s: 'levert til samling' },
+              { l: 'PÅ FRIST', v: `${onTimePct}%`,                        s: 'historisk snitt' },
+              { l: 'VISER',   v: Math.min(page * PAGE_SIZE, jobs.length), s: `av ${jobs.length} treff` },
+            ].map(s => (
+              <div key={s.l} style={{ background: cc.panel, border: `1px solid ${cc.hair}`, padding: '11px 14px', borderRadius: 6 }}>
+                <div style={SMALLCAP}>{s.l}</div>
+                <div style={{ fontFamily: MONO, fontSize: 26, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', fontWeight: 600, marginTop: 2 }}>{s.v}</div>
+                <div style={{ fontFamily: MONO, fontSize: 10.5, color: cc.ink3, marginTop: 1 }}>{s.s}</div>
               </div>
-              <h3 className="text-sm font-bold uppercase tracking-widest text-stone-900">Arkiverte oppdrag</h3>
-            </div>
-            <Badge variant="inverted">
-              {jobs.length} oppdrag
-            </Badge>
+            ))}
           </div>
 
-          {jobs.length > 0 ? (
-            <ArchiveList jobs={jobs} onSelectJob={onSelectJob} />
-          ) : (
-            <div className="py-12 text-center border-2 border-dashed rounded-2xl border-stone-100">
-              <p className="text-stone-400 text-sm">Ingen arkiverte oppdrag funnet.</p>
+          {/* ── Filter bar ──────────────────────────────────────────────── */}
+          <div style={{
+            background: cc.panel, border: `1px solid ${cc.hair}`, borderRadius: 6,
+            padding: 10,
+            display: 'grid',
+            gridTemplateColumns: '1fr 180px 200px auto auto',
+            gap: 8, alignItems: 'center',
+          }}>
+            {/* Search */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${cc.hair}`, borderRadius: 4, padding: '7px 10px', background: cc.bg }}>
+              <span style={{ fontFamily: MONO, fontSize: 11, color: cc.ink3 }}>⌕</span>
+              <input
+                value={searchTerm}
+                onChange={e => setSearchTerm?.(e.target.value)}
+                placeholder="Søk i arkivet…"
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: cc.ink, fontFamily: SANS }}
+              />
+            </div>
+            {/* Year filter */}
+            <select
+              value={selectedYear}
+              onChange={e => setSelectedYear?.(e.target.value)}
+              style={{ padding: '7px 10px', fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em', border: `1px solid ${cc.hair}`, borderRadius: 4, background: cc.bg, color: cc.ink, cursor: 'pointer' }}
+            >
+              <option value="all">ÅR · ALLE</option>
+              {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            {/* Photographer filter */}
+            <select
+              value={selectedOwner || 'all'}
+              onChange={e => setSelectedOwner?.(e.target.value)}
+              style={{ padding: '7px 10px', fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em', border: `1px solid ${cc.hair}`, borderRadius: 4, background: cc.bg, color: cc.ink, cursor: 'pointer' }}
+            >
+              <option value="all">ALLE FOTOGRAFER</option>
+              {uniqueOwners.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+            {/* Count */}
+            <div style={{ fontFamily: MONO, fontSize: 11, color: cc.ink3, letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{jobs.length} TREFF</div>
+            {/* Clear */}
+            {isAnyFilterActive && (
+              <button
+                onClick={clearFilters}
+                style={{ fontFamily: MONO, fontSize: 10, color: cc.critical, background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}
+              >
+                × TØM
+              </button>
+            )}
+          </div>
+
+          {/* ── Year chips ──────────────────────────────────────────────── */}
+          {uniqueYears.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setSelectedYear?.('all')}
+                style={{
+                  padding: '5px 11px', fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em',
+                  border: `1px solid ${selectedYear === 'all' ? cc.ink : cc.hair}`,
+                  background: selectedYear === 'all' ? cc.ink : cc.panel,
+                  color: selectedYear === 'all' ? cc.bg : cc.ink2,
+                  cursor: 'pointer', borderRadius: 3,
+                }}
+              >
+                ALLE ÅR
+              </button>
+              {uniqueYears.map(y => (
+                <button
+                  key={y}
+                  onClick={() => setSelectedYear?.(y)}
+                  style={{
+                    padding: '5px 11px', fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em',
+                    border: `1px solid ${selectedYear === y ? cc.ink : cc.hair}`,
+                    background: selectedYear === y ? cc.ink : cc.panel,
+                    color: selectedYear === y ? cc.bg : cc.ink2,
+                    cursor: 'pointer', borderRadius: 3,
+                  }}
+                >
+                  {y}
+                </button>
+              ))}
             </div>
           )}
-        </Card>
-      </section>
-      </>
+
+          {/* ── Table ───────────────────────────────────────────────────── */}
+          <div style={{ background: cc.panel, border: `1px solid ${cc.hair}`, borderRadius: 6, overflow: 'hidden' }}>
+            {/* Table header */}
+            <div style={{
+              padding: '10px 14px', borderBottom: `1px solid ${cc.hair}`,
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <div style={SMALLCAP}>ARKIVERTE OPPDRAG</div>
+              <div style={{ flex: 1 }} />
+              <div style={{ fontFamily: MONO, fontSize: 10.5, color: cc.ink3 }}>{jobs.length} totalt</div>
+            </div>
+
+            {/* Column headers */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 1fr 120px 100px 80px 80px',
+              gap: 0, padding: '7px 14px',
+              borderBottom: `1px solid ${cc.hair}`,
+              fontFamily: MONO, fontSize: 10, color: cc.ink3, letterSpacing: '0.08em',
+            }}>
+              <div>ORDRE-NR</div>
+              <div>TITTEL</div>
+              <div>FOTOGRAF</div>
+              <div>FERDIG</div>
+              <div>TYPE</div>
+              <div style={{ textAlign: 'right' }}>STATUS</div>
+            </div>
+
+            {/* Rows */}
+            {jobs.length === 0 ? (
+              <div style={{ padding: '40px 14px', textAlign: 'center', fontFamily: MONO, fontSize: 11, color: cc.ink3, letterSpacing: '0.08em' }}>
+                INGEN ARKIVERTE OPPDRAG FUNNET
+              </div>
+            ) : (
+              pageJobs.map((job, i) => (
+                <ArkivRow
+                  key={job.id}
+                  job={job}
+                  cc={cc}
+                  onSelect={onSelectJob}
+                  stripe={i % 2 === 1}
+                />
+              ))
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{
+                padding: '10px 14px', borderTop: `1px solid ${cc.hair}`,
+                display: 'flex', alignItems: 'center', gap: 10,
+                fontFamily: MONO, fontSize: 10.5, color: cc.ink3,
+              }}>
+                <span>VISER {Math.min((page - 1) * PAGE_SIZE + 1, jobs.length)}–{Math.min(page * PAGE_SIZE, jobs.length)} AV {jobs.length}</span>
+                <div style={{ flex: 1 }} />
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  style={{ fontFamily: MONO, fontSize: 10.5, color: page <= 1 ? cc.ink3 : cc.ink, background: 'none', border: 'none', cursor: page <= 1 ? 'default' : 'pointer' }}
+                >
+                  ‹ FORRIGE
+                </button>
+                <span>{page} / {totalPages}</span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  style={{ fontFamily: MONO, fontSize: 10.5, color: page >= totalPages ? cc.ink3 : cc.ink, background: 'none', border: 'none', cursor: page >= totalPages ? 'default' : 'pointer' }}
+                >
+                  NESTE ›
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
