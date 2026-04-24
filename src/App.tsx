@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Camera, RefreshCw, Filter, Calendar, ArrowLeft, LayoutGrid, List as ListIcon, Settings, Search, LayoutDashboard, FolderOpen, Archive, Moon, Sun } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Job } from "./types";
 import { JobDetails } from "./components/JobDetails";
@@ -10,6 +10,7 @@ import { CalendarView } from "./components/CalendarView";
 import { ThemeSettings } from "./components/ThemeSettings";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { JobDataProvider } from "./context/JobDataContext";
+import { DopSidebar, DopMobileTabBar } from "./components/dop/DopSidebar";
 import { Toaster, toast } from "sonner";
 import { useJobFilters } from "./hooks/useJobFilters";
 import { useAllJobOverrides } from "./hooks/useAllJobOverrides";
@@ -222,285 +223,174 @@ function AppContent() {
     setSelectedJobId(null);
   }, []);
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  const handleNav = (view: MainView) => {
+    setSelectedJobId(null);
+    setMainView(view);
+    if (view !== 'browse') setDateFilter('all');
+  };
+
   return (
-    <div 
-      className="flex flex-col h-screen transition-colors duration-500 selection:bg-stone-200"
-      style={{ 
-        backgroundColor: theme.stone50,
-        color: theme.textColorPrimary,
-        fontFamily: theme.fontSans
-      }}
+    <div
+      className="flex h-screen overflow-hidden transition-colors duration-500 selection:bg-stone-200"
+      style={{ backgroundColor: theme.stone50, color: theme.textColorPrimary, fontFamily: theme.fontSans }}
     >
-      <header 
-        className="flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-3 md:py-0 md:h-16 shrink-0 z-10 shadow-sm gap-3 md:gap-0 transition-all duration-500 bg-header-bg border-b border-header-border"
-      >
-        <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => {
-                setSelectedJobId(null);
-                setMainView("dashboard");
-                setDateFilter("all");
-              }}
-              className="text-left hover:opacity-80 transition-opacity"
-            >
-              <h1 className="text-sm font-serif font-black tracking-widest text-stone-900">NaMFOTO</h1>
-              <p className="text-[10px] font-medium uppercase tracking-tight -mt-0.5 transition-colors text-stone-500">Fotooppdrag Dashboard</p>
-            </button>
-          </div>
+      {/* ── Desktop Sidebar ─────────────────────────────────────── */}
+      <div className="hidden md:flex h-full">
+        <DopSidebar
+          activeView={selectedJobId ? mainView : mainView}
+          onNav={handleNav}
+          darkMode={darkMode}
+          onToggleDark={toggleDarkMode}
+          userName={uniqueOwners[0]}
+        />
+      </div>
 
-          {/* View Toggles - Moved to Left */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="flex items-center p-1 rounded-lg shrink-0 transition-colors bg-nav-bg border border-nav-border">
-              <button
-                onClick={() => {
-                  setMainView("dashboard");
-                  setSelectedJobId(null);
-                  setDateFilter("all");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                  mainView === "dashboard" && !selectedJob
-                    ? "bg-stone-50 text-stone-900 shadow-sm"
-                    : "text-stone-500 hover:text-stone-900"
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                OVERSIKT
-              </button>
-              <button
-                onClick={() => {
-                  setMainView("browse");
-                  setSelectedJobId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                  mainView === "browse" && !selectedJob
-                    ? "bg-stone-50 text-stone-900 shadow-sm"
-                    : "text-stone-500 hover:text-stone-900"
-                }`}
-              >
-                <FolderOpen className="w-3.5 h-3.5" />
-                BESTILLINGER
-              </button>
-              <button
-                onClick={() => {
-                  setMainView("calendar");
-                  setSelectedJobId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                  mainView === "calendar" && !selectedJob
-                    ? "bg-stone-50 text-stone-900 shadow-sm"
-                    : "text-stone-500 hover:text-stone-900"
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                KALENDER
-              </button>
-              <button
-                onClick={() => {
-                  setMainView("settings");
-                  setSelectedJobId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                  mainView === "settings"
-                    ? "bg-stone-50 text-stone-900 shadow-sm"
-                    : "text-stone-500 hover:text-stone-900"
-                }`}
-                title="Innstillinger"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                INNSTILLINGER
-              </button>
-              <button
-                onClick={() => {
-                  setMainView("archive");
-                  setArchiveTab("list");
-                  setSelectedJobId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                  mainView === "archive" && !selectedJob
-                    ? "bg-stone-50 text-stone-900 shadow-sm"
-                    : "text-stone-500 hover:text-stone-900"
-                }`}
-              >
-                <Archive className="w-3.5 h-3.5" />
-                ARKIV
-              </button>
-            </div>
-          </div>
-          
-          {/* Dark mode toggle — visible on all screen sizes */}
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full transition-colors hover:bg-stone-200 text-stone-500 hover:text-stone-900 shrink-0"
-            title={darkMode ? "Lys modus" : "Mørk modus"}
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          {/* Mobile Buttons */}
-          <div className="flex md:hidden items-center gap-2">
-            <button 
-              onClick={() => {
-                setMainView("archive");
-                setArchiveTab("list");
-                setSelectedJobId(null);
-              }}
-              className={`p-2 rounded-full transition-colors hover:bg-stone-200 ${mainView === 'archive' ? 'text-stone-900 bg-stone-100' : 'text-stone-500 hover:text-stone-900'}`}
-              title="Arkiv"
-            >
-              <Archive className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => {
-                setMainView("settings");
-                setSelectedJobId(null);
-              }}
-              className={`p-2 rounded-full transition-colors hover:bg-stone-200 text-stone-500 hover:text-stone-900`}
-              title="Innstillinger"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden relative">
-        {/* Content Area - Job Details */}
+      {/* ── Main area ───────────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <JobDataProvider jobOverrides={jobOverrides} jobProgress={jobProgress}>
-        <section
-          className="flex-1 overflow-y-auto flex flex-col relative w-full"
-          style={{ backgroundColor: theme.stone50 }}
-        >
-          {/* Mobile Back Button */}
-          {selectedJob && (
-            <div className="md:hidden p-3 border-b sticky top-0 z-40 flex items-center shadow-sm bg-stone-50 border-stone-200">
-              <button 
-                onClick={handleBackToList} 
-                className="flex items-center gap-2 px-2 py-1 rounded-md active:bg-stone-100 text-stone-900"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-wider">Tilbake til listen</span>
-              </button>
-            </div>
-          )}
-          
-          {selectedJob ? (
-            <JobDetails 
-              job={selectedJob} 
-              loading={loadingDetails} 
-              onBack={handleBackToList} 
-              isArchive={mainView === "archive"}
-            />
-          ) : (jobsError || archiveError) ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-100 text-red-600">
-                <RefreshCw className="w-8 h-8" />
+          <section
+            className="flex-1 overflow-y-auto flex flex-col relative w-full"
+            style={{ backgroundColor: theme.stone50 }}
+          >
+            {/* Mobile Back Button */}
+            {selectedJob && (
+              <div className="md:hidden p-3 border-b sticky top-0 z-40 flex items-center shadow-sm" style={{ background: theme.stone50, borderColor: theme.stone200 }}>
+                <button
+                  onClick={handleBackToList}
+                  className="flex items-center gap-2 px-2 py-1 rounded-md active:bg-stone-100"
+                  style={{ color: theme.textColorPrimary }}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="font-bold text-xs uppercase tracking-wider">Tilbake</span>
+                </button>
               </div>
-              <h2 className="text-xl font-medium mb-2 text-stone-900">Kunne ikke laste oppdrag</h2>
-              <p className="mb-6 max-w-md text-stone-500">
-                Det oppstod en feil under henting av data fra serveren. Vennligst prøv igjen senere.
-              </p>
-              <button 
-                onClick={() => mainView === 'archive' ? refetchArchive() : refetchJobs()}
-                className="px-6 py-2 rounded-lg font-medium transition-colors bg-stone-900 text-white hover:bg-stone-800"
-              >
-                Prøv igjen
-              </button>
-            </div>
-          ) : mainView === "dashboard" ? (
-            <Dashboard 
-              jobs={filteredJobs} 
-              historicalJobs={allHistoricalJobs}
-              onSelectJob={handleSelectJob} 
-              selectedOwner={selectedOwner} 
-              setSelectedOwner={setSelectedOwner}
-              uniqueOwners={uniqueOwners}
-              selectedLocations={selectedLocations}
-              setSelectedLocations={setSelectedLocations}
-              uniqueLocations={uniqueLocations}
-              showNBOnly={showNBOnly}
-              setShowNBOnly={setShowNBOnly}
-              onNavigateToBrowse={(filter) => {
-                setDateFilter(filter);
-                setMainView("browse");
-              }}
-              loading={loadingJobs}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              onRefresh={handleRefresh}
-              clearFilters={clearFilters}
-            />
-          ) : mainView === "archive" ? (
-            <ArchiveView 
-              jobs={filteredJobs} 
-              onSelectJob={handleSelectJob} 
-              selectedOwner={selectedOwner} 
-              setSelectedOwner={setSelectedOwner}
-              uniqueOwners={uniqueOwners}
-              selectedLocations={selectedLocations}
-              setSelectedLocations={setSelectedLocations}
-              uniqueLocations={uniqueLocations}
-              showNBOnly={showNBOnly}
-              setShowNBOnly={setShowNBOnly}
-              selectedYear={selectedYear}
-              setSelectedYear={setSelectedYear}
-              uniqueYears={uniqueYears}
-              loading={loadingArchive}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              onRefresh={() => refetchArchive()}
-              onSync={() => syncArchiveMutation.mutate(false)}
-              isSyncing={syncArchiveMutation.isPending}
-              archiveTab={archiveTab}
-              setArchiveTab={setArchiveTab}
-              clearFilters={clearFilters}
-            />
-          ) : mainView === "calendar" ? (
-            <CalendarView 
-              jobs={filteredJobs} 
-              onSelectJob={handleSelectJob} 
-              selectedOwner={selectedOwner} 
-              setSelectedOwner={setSelectedOwner}
-              uniqueOwners={uniqueOwners}
-              loading={loadingJobs}
-              clearFilters={clearFilters}
-            />
-          ) : mainView === "settings" ? (
-            <ThemeSettings uniqueLocations={uniqueLocations} uniqueTypes={uniqueTypes} uniqueOwners={uniqueOwners} />
-          ) : (
-            <BrowseView 
-              jobs={filteredJobs} 
-              onSelectJob={handleSelectJob} 
-              layout={browseLayout}
-              setLayout={setBrowseLayout}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              sortConfig={sortConfig}
-              handleSort={handleSort}
-              dateFilter={dateFilter}
-              setDateFilter={setDateFilter}
-              counts={counts}
-              selectedOwner={selectedOwner}
-              setSelectedOwner={setSelectedOwner}
-              uniqueOwners={uniqueOwners}
-              selectedLocation={selectedLocations}
-              setSelectedLocation={setSelectedLocations}
-              uniqueLocations={uniqueLocations}
-              locationCounts={locationCounts}
-              selectedType={selectedTypes}
-              setSelectedType={setSelectedTypes}
-              uniqueTypes={uniqueTypes}
-              typeCounts={typeCounts}
-              showNBOnly={showNBOnly}
-              setShowNBOnly={setShowNBOnly}
-              loading={loadingJobs}
-              clearFilters={clearFilters}
-            />
-          )}
-        </section>
+            )}
+
+            {selectedJob ? (
+              <JobDetails
+                job={selectedJob}
+                loading={loadingDetails}
+                onBack={handleBackToList}
+                isArchive={mainView === "archive"}
+              />
+            ) : (jobsError || archiveError) ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-100 text-red-600">
+                  <RefreshCw className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-medium mb-2" style={{ color: theme.textColorPrimary }}>Kunne ikke laste oppdrag</h2>
+                <p className="mb-6 max-w-md" style={{ color: theme.textColorMuted }}>
+                  Det oppstod en feil under henting av data fra serveren. Vennligst prøv igjen.
+                </p>
+                <button
+                  onClick={() => mainView === 'archive' ? refetchArchive() : refetchJobs()}
+                  className="px-6 py-2 rounded-lg font-medium transition-colors"
+                  style={{ background: theme.stone900, color: theme.textColorInverted }}
+                >
+                  Prøv igjen
+                </button>
+              </div>
+            ) : mainView === "dashboard" ? (
+              <Dashboard
+                jobs={filteredJobs}
+                historicalJobs={allHistoricalJobs}
+                onSelectJob={handleSelectJob}
+                selectedOwner={selectedOwner}
+                setSelectedOwner={setSelectedOwner}
+                uniqueOwners={uniqueOwners}
+                selectedLocations={selectedLocations}
+                setSelectedLocations={setSelectedLocations}
+                uniqueLocations={uniqueLocations}
+                showNBOnly={showNBOnly}
+                setShowNBOnly={setShowNBOnly}
+                onNavigateToBrowse={(filter) => {
+                  setDateFilter(filter);
+                  setMainView("browse");
+                }}
+                loading={loadingJobs}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                onRefresh={handleRefresh}
+                clearFilters={clearFilters}
+              />
+            ) : mainView === "archive" ? (
+              <ArchiveView
+                jobs={filteredJobs}
+                onSelectJob={handleSelectJob}
+                selectedOwner={selectedOwner}
+                setSelectedOwner={setSelectedOwner}
+                uniqueOwners={uniqueOwners}
+                selectedLocations={selectedLocations}
+                setSelectedLocations={setSelectedLocations}
+                uniqueLocations={uniqueLocations}
+                showNBOnly={showNBOnly}
+                setShowNBOnly={setShowNBOnly}
+                selectedYear={selectedYear}
+                setSelectedYear={setSelectedYear}
+                uniqueYears={uniqueYears}
+                loading={loadingArchive}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                onRefresh={() => refetchArchive()}
+                onSync={() => syncArchiveMutation.mutate(false)}
+                isSyncing={syncArchiveMutation.isPending}
+                archiveTab={archiveTab}
+                setArchiveTab={setArchiveTab}
+                clearFilters={clearFilters}
+              />
+            ) : mainView === "calendar" ? (
+              <CalendarView
+                jobs={filteredJobs}
+                onSelectJob={handleSelectJob}
+                selectedOwner={selectedOwner}
+                setSelectedOwner={setSelectedOwner}
+                uniqueOwners={uniqueOwners}
+                loading={loadingJobs}
+                clearFilters={clearFilters}
+              />
+            ) : mainView === "settings" ? (
+              <ThemeSettings uniqueLocations={uniqueLocations} uniqueTypes={uniqueTypes} uniqueOwners={uniqueOwners} />
+            ) : (
+              <BrowseView
+                jobs={filteredJobs}
+                onSelectJob={handleSelectJob}
+                layout={browseLayout}
+                setLayout={setBrowseLayout}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                sortConfig={sortConfig}
+                handleSort={handleSort}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
+                counts={counts}
+                selectedOwner={selectedOwner}
+                setSelectedOwner={setSelectedOwner}
+                uniqueOwners={uniqueOwners}
+                selectedLocation={selectedLocations}
+                setSelectedLocation={setSelectedLocations}
+                uniqueLocations={uniqueLocations}
+                locationCounts={locationCounts}
+                selectedType={selectedTypes}
+                setSelectedType={setSelectedTypes}
+                uniqueTypes={uniqueTypes}
+                typeCounts={typeCounts}
+                showNBOnly={showNBOnly}
+                setShowNBOnly={setShowNBOnly}
+                loading={loadingJobs}
+                clearFilters={clearFilters}
+              />
+            )}
+          </section>
         </JobDataProvider>
-      </main>
+
+        {/* ── Mobile bottom tab bar ──────────────────────────── */}
+        <div className="md:hidden">
+          <DopMobileTabBar activeView={mainView} onNav={handleNav} />
+        </div>
+      </div>
+
       <Toaster position="top-right" />
     </div>
   );

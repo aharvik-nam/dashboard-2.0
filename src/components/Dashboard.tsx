@@ -1,24 +1,14 @@
-import React, { useMemo, useRef, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { Job } from "../types";
-import { MONTHLY_AVERAGES, MAIN_PHOTOGRAPHERS } from "../constants/dashboardConstants";
-import { DashboardStats } from "./dashboard/DashboardStats";
-import { JobTable } from "./dashboard/JobTable";
-import { TrendChart } from "./dashboard/TrendChart";
-import { WorkloadSidebar } from "./dashboard/WorkloadSidebar";
-import { DashboardJobCard } from "./dashboard/DashboardJobCard";
-import { parseDate, getJobLocationStr, getJobDeadlineStr, categorizeLocation, isJobNB as isJobNBUtil } from "../utils/jobUtils";
-import { STATUS } from "../constants/fieldNames";
-import { getWeekNumber } from "../utils/dateUtils";
-import { getAIRecommendationForJob } from "../services/geminiService";
+import { WORKLOAD_COLORS } from "./dashboard/WorkloadSidebar";
+import { parseDate, getJobLocationStr, getJobDeadlineStr, getJobTypeStr, isJobNB as isJobNBUtil, formatDate } from "../utils/jobUtils";
 import { DateFilter } from "../hooks/useJobFilters";
 import { useTheme } from "../context/ThemeContext";
 import { useJobData } from "../context/JobDataContext";
-import { Search, RefreshCw, Clock, PlusCircle, TrendingUp, Users, X, Calendar as CalendarIcon } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { useNMData } from "../hooks/useNMData";
-import { useDiMuData } from "../hooks/useDiMuData";
-import { ImagePreviewModal } from "./ui/ImagePreviewModal";
+import { RefreshCw, Search, X, BookOpen } from "lucide-react";
+import { DopPill, DopStatCard, dopSmallcap } from "./dop/DopPrimitives";
 
+// ─── Types ──────────────────────────────────────────────────────────────────
 interface DashboardProps {
   jobs: Job[];
   historicalJobs?: Job[];
@@ -39,12 +29,304 @@ interface DashboardProps {
   clearFilters?: () => void;
 }
 
+// ─── Token helpers ───────────────────────────────────────────────────────────
+const MONO = '"JetBrains Mono","IBM Plex Mono",ui-monospace,monospace';
+const SANS = '"Inter","Helvetica Neue",Helvetica,Arial,sans-serif';
 
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  jobs, 
+function getJobPriority(job: Job, today: Date): 'critical' | 'high' | 'medium' | 'today' | 'soon' | 'later' {
+  const props = job.all_properties || {};
+  const deadlineStr = getJobDeadlineStr(props, job);
+  const deadline = parseDate(deadlineStr);
+  if (!deadline) return 'later';
+  const d = new Date(deadline);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.round((d.getTime() - today.getTime()) / (1000 * 3600 * 24));
+  if (diff < -60) return 'critical';
+  if (diff < 0) return 'high';
+  if (diff === 0) return 'today';
+  if (diff <= 3) return 'soon';
+  if (diff <= 10) return 'medium';
+  return 'later';
+}
+
+function getDaysOverdue(job: Job, today: Date): number {
+  const props = job.all_properties || {};
+  const deadlineStr = getJobDeadlineStr(props, job);
+  const deadline = parseDate(deadlineStr);
+  if (!deadline) return 0;
+  const d = new Date(deadline); d.setHours(0, 0, 0, 0);
+  return -Math.round((d.getTime() - today.getTime()) / (1000 * 3600 * 24)); // positive = overdue
+}
+
+// ─── CmdBar ─────────────────────────────────────────────────────────────────
+function DopCmdbar({ title, subtitle, bg, borderColor, textPrimary, textMuted, searchTerm, setSearchTerm, onRefresh }: {
+  title: string; subtitle: string;
+  bg: string; borderColor: string; textPrimary: string; textMuted: string;
+  searchTerm?: string; setSearchTerm?: (s: string) => void;
+  onRefresh?: () => void;
+}) {
+  return (
+    <div style={{
+      borderBottom: `1px solid ${borderColor}`,
+      padding: '10px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 14,
+      background: bg,
+      color: textPrimary,
+      flexWrap: 'wrap',
+      flexShrink: 0,
+    }}>
+      <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: SANS }}>{title}</div>
+        <div style={{ fontFamily: MONO, fontSize: 10.5, color: textMuted, letterSpacing: '0.05em', marginTop: 1 }}>{subtitle}</div>
+      </div>
+      {/* Search */}
+      <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 160 }}>
+        <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: textMuted, pointerEvents: 'none' }} />
+        <input
+          type="text"
+          placeholder="Søk kunde, inv.nr…"
+          value={searchTerm || ''}
+          onChange={e => setSearchTerm?.(e.target.value)}
+          style={{
+            width: '100%',
+            paddingLeft: 28, paddingRight: searchTerm ? 28 : 10, paddingTop: 6, paddingBottom: 6,
+            border: `1px solid ${borderColor}`,
+            borderRadius: 5,
+            background: bg,
+            fontFamily: MONO, fontSize: 11,
+            color: textPrimary,
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+        {searchTerm && (
+          <button onClick={() => setSearchTerm?.('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: textMuted, display: 'flex', alignItems: 'center' }}>
+            <X size={12} />
+          </button>
+        )}
+      </div>
+      {onRefresh && (
+        <button onClick={onRefresh} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: textMuted, display: 'flex', alignItems: 'center', padding: '6px 4px' }} title="Oppdater data">
+          <RefreshCw size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Table row (Dagens Oppgaver) ─────────────────────────────────────────────
+function TodayRow({ job, index, onSelectJob, bg, panelBg, borderColor, textPrimary, textSecondary, textMuted, okColor, okBg }: {
+  job: Job; index: number; onSelectJob: (job: Job) => void;
+  bg: string; panelBg: string; borderColor: string;
+  textPrimary: string; textSecondary: string; textMuted: string;
+  okColor: string; okBg: string;
+}) {
+  const [h, setH] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const props = job.all_properties || {};
+  const deadline = getJobDeadlineStr(props, job);
+  const typeStr = getJobTypeStr(props) || (job.type || '—');
+  const location = getJobLocationStr(props);
+  const client = job.title?.split(' - ')[0] || job.title || '—';
+  const owner = job.owner_names?.[0] || '—';
+
+  return (
+    <div
+      onClick={() => onSelectJob(job)}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '24px 20px 1.4fr 0.9fr 90px 90px 100px 70px',
+        padding: '8px 14px',
+        borderBottom: `1px solid ${borderColor}`,
+        alignItems: 'center',
+        fontSize: 12.5,
+        background: h ? bg : panelBg,
+        cursor: 'pointer',
+        transition: 'background .1s',
+        gap: 8,
+        fontFamily: SANS,
+      }}
+    >
+      <input type="checkbox" checked={checked} onChange={e => { e.stopPropagation(); setChecked(e.target.checked); }} onClick={e => e.stopPropagation()} style={{ margin: 0, accentColor: '#d97757', flexShrink: 0 }} />
+      <div style={{ fontFamily: MONO, fontSize: 10.5, color: textMuted }}>{String(index + 1).padStart(2, '0')}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{client}</div>
+        <div style={{ fontFamily: MONO, fontSize: 10, color: textMuted, marginTop: 1 }}>{job.id}</div>
+      </div>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', minWidth: 0 }}>
+        {typeStr && <DopPill bg={bg} fg={textSecondary}>{typeStr.slice(0, 14)}</DopPill>}
+        {location && <DopPill bg={bg} fg={textMuted}>{location.slice(0, 12)}</DopPill>}
+      </div>
+      <div style={{ fontFamily: MONO, fontVariantNumeric: 'tabular-nums', fontSize: 12, textAlign: 'right', color: textSecondary }}>{owner.split(' ').map(w => w[0]).join('')}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11.5, textAlign: 'right', color: textSecondary }}>{deadline ? formatDate(deadline) : '—'}</div>
+      <div style={{ textAlign: 'right' }}><DopPill bg={okBg} fg={okColor} bold>I DAG</DopPill></div>
+      <div style={{ textAlign: 'right' }}>
+        <span style={{ fontFamily: MONO, fontSize: 10, padding: '3px 8px', border: `1px solid ${borderColor}`, borderRadius: 3, background: panelBg, color: textSecondary, whiteSpace: 'nowrap' }}>ÅPNE →</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Compact overdue row (Kritisk / Kommende) ────────────────────────────────
+function CompactRow({ job, onSelectJob, rightText, rightColor, bg, panelBg, borderColor, textPrimary, textMuted }: {
+  job: Job; onSelectJob: (job: Job) => void;
+  rightText: string; rightColor: string;
+  bg: string; panelBg: string; borderColor: string;
+  textPrimary: string; textMuted: string;
+}) {
+  const [h, setH] = useState(false);
+  const props = job.all_properties || {};
+  const typeStr = getJobTypeStr(props) || (job.type || '');
+  const client = job.title?.split(' - ')[0] || job.title || '—';
+  const owner = job.owner_names?.[0] || '';
+  const ownerInitials = owner.split(' ').map(w => w[0]).join('');
+
+  return (
+    <div
+      onClick={() => onSelectJob(job)}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 60px',
+        padding: '7px 14px',
+        borderBottom: `1px solid ${borderColor}`,
+        alignItems: 'center',
+        fontSize: 12.5,
+        gap: 10,
+        cursor: 'pointer',
+        background: h ? bg : panelBg,
+        transition: 'background .1s',
+        fontFamily: SANS,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{client}</div>
+        <div style={{ fontFamily: MONO, fontSize: 10, color: textMuted, marginTop: 1 }}>{ownerInitials} · {typeStr}</div>
+      </div>
+      <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, color: rightColor, textAlign: 'right' }}>{rightText}</div>
+    </div>
+  );
+}
+
+// ─── Week row ────────────────────────────────────────────────────────────────
+function WeekRow({ job, dayLabel, onSelectJob, bg, panelBg, borderColor, textPrimary, textMuted, pillBg, pillFg, pillText }: {
+  job: Job; dayLabel: string; onSelectJob: (job: Job) => void;
+  bg: string; panelBg: string; borderColor: string;
+  textPrimary: string; textMuted: string;
+  pillBg: string; pillFg: string; pillText: string;
+}) {
+  const [h, setH] = useState(false);
+  const props = job.all_properties || {};
+  const typeStr = getJobTypeStr(props) || (job.type || '');
+  const client = job.title?.split(' - ')[0] || job.title || '—';
+  const owner = job.owner_names?.[0] || '';
+  const ownerInitials = owner.split(' ').map(w => w[0]).join('');
+
+  return (
+    <div
+      onClick={() => onSelectJob(job)}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '54px 1fr 80px',
+        padding: '7px 14px',
+        borderBottom: `1px solid ${borderColor}`,
+        alignItems: 'center',
+        fontSize: 12.5,
+        gap: 10,
+        cursor: 'pointer',
+        background: h ? bg : panelBg,
+        transition: 'background .1s',
+        fontFamily: SANS,
+      }}
+    >
+      <div style={{ fontFamily: MONO, fontSize: 11, color: textPrimary, fontWeight: 600 }}>{dayLabel}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{client}</div>
+        <div style={{ fontFamily: MONO, fontSize: 10, color: textMuted, marginTop: 1 }}>{ownerInitials} · {typeStr}</div>
+      </div>
+      <div style={{ textAlign: 'right' }}><DopPill bg={pillBg} fg={pillFg} bold>{pillText}</DopPill></div>
+    </div>
+  );
+}
+
+// ─── Workload table row ──────────────────────────────────────────────────────
+function WorkloadRow({ owner, data, borderColor, textPrimary, textMuted, criticalColor, warnColor, okColor, bg }: {
+  owner: string; data: { total: number; overdue: number; locations: Record<string, number> };
+  borderColor: string; textPrimary: string; textMuted: string;
+  criticalColor: string; warnColor: string; okColor: string; bg: string;
+}) {
+  const [h, setH] = useState(false);
+  const locKeys = Object.keys(WORKLOAD_COLORS);
+  const total = data.total || 1;
+
+  return (
+    <div
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '150px 50px 1fr 60px 50px 50px',
+        padding: '8px 14px',
+        borderBottom: `1px solid ${borderColor}`,
+        alignItems: 'center',
+        fontSize: 12.5,
+        gap: 12,
+        cursor: 'pointer',
+        transition: 'background .1s',
+        background: h ? bg : 'transparent',
+        fontFamily: SANS,
+      }}
+    >
+      <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{owner}</div>
+      <div style={{ fontFamily: MONO, fontVariantNumeric: 'tabular-nums', fontSize: 13, textAlign: 'right', fontWeight: 600 }}>{data.total}</div>
+      <div style={{ display: 'flex', height: 10, borderRadius: 2, overflow: 'hidden', background: bg }}>
+        {Object.entries(WORKLOAD_COLORS).map(([loc, color]) => {
+          const count = data.locations?.[loc] || 0;
+          return count > 0 ? (
+            <div key={loc} style={{ flex: count, background: color }} title={`${loc}: ${count}`} />
+          ) : null;
+        })}
+      </div>
+      <div style={{ fontFamily: MONO, fontSize: 11.5, textAlign: 'right', color: criticalColor, fontWeight: 600 }}>{data.overdue}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11.5, textAlign: 'right', color: warnColor }}>{data.locations?.['Front of House'] || 0}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11.5, textAlign: 'right', color: okColor }}>{data.total - data.overdue}</div>
+    </div>
+  );
+}
+
+// ─── Section header (panel card header) ──────────────────────────────────────
+function SectionHead({ label, children, panelBg, borderColor, textPrimary }: {
+  label: string; children?: React.ReactNode;
+  panelBg: string; borderColor: string; textPrimary: string;
+}) {
+  return (
+    <div style={{
+      padding: '9px 14px',
+      borderBottom: `1px solid ${borderColor}`,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      background: panelBg,
+    }}>
+      <span style={{ fontSize: 12, fontWeight: 600, fontFamily: SANS, color: textPrimary }}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+// ─── Main Dashboard ─────────────────────────────────────────────────────────
+export const Dashboard: React.FC<DashboardProps> = ({
+  jobs,
   historicalJobs = [],
-  onSelectJob, 
-  selectedOwner, 
+  onSelectJob,
+  selectedOwner,
   setSelectedOwner,
   uniqueOwners = [],
   selectedLocations = [],
@@ -62,888 +344,276 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { theme } = useTheme();
   const { jobOverrides } = useJobData();
 
-  const isJobNB = useCallback((job: Job) => {
-    return isJobNBUtil(job, jobOverrides);
-  }, [jobOverrides]);
+  // Colors from theme
+  const bg        = theme.stone50;
+  const panelBg   = theme.stone100;
+  const border    = theme.stone200;
+  const textPrimary = theme.textColorPrimary;
+  const textSecondary = theme.textColorSecondary;
+  const textMuted = theme.textColorMuted;
+  const critical  = theme.statusCritical;
+  const critBg    = `${critical}1a`;  // ~10% alpha — adapts to dark mode
+  const warn      = theme.statusOverdue;
+  const warnBg    = `${warn}1a`;
+  const ok        = theme.statusWithin;
+  const okBg      = `${ok}1a`;
+  const blue      = theme.statusProgress;
+  const blueBg    = `${blue}1a`;
+  const purpleBg  = `${theme.statusNB}1a`;
+
+  const isJobNB = useCallback((job: Job) => isJobNBUtil(job, jobOverrides), [jobOverrides]);
 
   const visibleJobs = useMemo(() => {
     if (!Array.isArray(jobs)) return [];
-    if (showNBOnly) return jobs; // They are already filtered by hook if showNBOnly is true
-    return jobs.filter(job => !isJobNB(job));
+    if (showNBOnly) return jobs;
+    return jobs.filter(j => !isJobNB(j));
   }, [jobs, isJobNB, showNBOnly]);
 
-  const statsJobs = useMemo(() => {
-    return Array.isArray(jobs) ? jobs.filter(job => !isJobNB(job)) : [];
-  }, [jobs, isJobNB]);
+  const statsJobs = useMemo(() => Array.isArray(jobs) ? jobs.filter(j => !isJobNB(j)) : [], [jobs, isJobNB]);
 
-  const statsHistoricalJobs = useMemo(() => {
-    return Array.isArray(historicalJobs) ? historicalJobs.filter(job => !isJobNB(job)) : [];
-  }, [historicalJobs, isJobNB]);
+  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
 
-  const visibleHistoricalJobs = useMemo(() => {
-    if (!Array.isArray(historicalJobs)) return [];
-    if (showNBOnly) return historicalJobs;
-    return historicalJobs.filter(job => !isJobNB(job));
-  }, [historicalJobs, isJobNB, showNBOnly]);
-
-  const [showOwnerSheet, setShowOwnerSheet] = useState(false);
-  const [showLocationSheet, setShowLocationSheet] = useState(false);
-  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
-
-  const hasActiveFilters = (selectedOwner && selectedOwner !== "all") || 
-    (selectedLocations && selectedLocations.length > 0) || 
-    (searchTerm && searchTerm.length > 0);
-  
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
-  const todayEvents = useMemo(() => {
-    if (!Array.isArray(visibleJobs)) return [];
-    return visibleJobs.filter(job => {
-      const props = job.all_properties || {};
-      const deadlineStr = getJobDeadlineStr(props, job);
-      if (deadlineStr) {
-        const deadline = parseDate(deadlineStr);
-        if (!deadline) return false;
-        deadline.setHours(0, 0, 0, 0);
-        return deadline.getTime() === today.getTime();
-      }
-      return false;
+  // Priority buckets
+  const { criticalJobs, overdueJobs, todayJobs, upcomingJobs } = useMemo(() => {
+    const critical: Job[] = [], overdue: Job[] = [], todayList: Job[] = [], upcoming: Job[] = [];
+    visibleJobs.forEach(job => {
+      const p = getJobPriority(job, today);
+      if (p === 'critical') critical.push(job);
+      else if (p === 'high') overdue.push(job);
+      else if (p === 'today') todayList.push(job);
+      else if (p === 'soon' || p === 'medium') upcoming.push(job);
     });
+    return { criticalJobs: critical, overdueJobs: overdue, todayJobs: todayList, upcomingJobs: upcoming };
   }, [visibleJobs, today]);
 
-  const thisWeekJobs = useMemo(() => {
-    if (!Array.isArray(visibleJobs)) return [];
-    const endOfWeek = new Date(today);
-    endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
-    endOfWeek.setHours(23, 59, 59, 999);
+  const onTimeCount = useMemo(() => visibleJobs.filter(j => {
+    const p = getJobPriority(j, today);
+    return p === 'today' || p === 'soon' || p === 'medium' || p === 'later';
+  }).length, [visibleJobs, today]);
 
-    return visibleJobs.filter(job => {
-      const props = job.all_properties || {};
-      const deadlineStr = getJobDeadlineStr(props, job);
-      if (deadlineStr) {
-        const deadline = parseDate(deadlineStr);
-        if (!deadline) return false;
-        return deadline > today && deadline <= endOfWeek;
-      }
-      return false;
-    }).sort((a, b) => {
-      const da = parseDate(a.all_properties?.frist_for_fotografering || a.due_date)?.getTime() || 0;
-      const db = parseDate(b.all_properties?.frist_for_fotografering || b.due_date)?.getTime() || 0;
-      return da - db;
-    });
-  }, [visibleJobs, today]);
-
-  const distributionJobs = useMemo(() => {
-    if (!Array.isArray(visibleJobs)) return [];
-    return visibleJobs.filter(job => {
-      const stage = job.all_properties?.dealstage || '';
-      const isDistributionStage = stage.toLowerCase().includes('fordeling') || stage === '4' || stage === 'appointmentscheduled';
-      const isUnassigned = !job.owner_names || job.owner_names.length === 0 || job.owner_names.includes(STATUS.UNASSIGNED);
-      
-      return (isDistributionStage || isUnassigned) && job.status !== 'Løst';
-    }).slice(0, 5);
-  }, [visibleJobs]);
-
-  // Collect all unique NM IDs for indicators
-  const allNmIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (Array.isArray(visibleJobs)) {
-      visibleJobs.forEach(job => {
-        if (job.nmids) {
-          job.nmids.forEach(id => ids.add(id));
-        }
-      });
-    }
-    return Array.from(ids);
-  }, [visibleJobs]);
-
-  const { nmDataMap } = useNMData(allNmIds);
-  const { dimuDataMap } = useDiMuData(allNmIds);
-
-  const weekStats = useMemo(() => {
-    const endOfThisWeek = new Date(today);
-    endOfThisWeek.setDate(today.getDate() + (7 - today.getDay()));
-    
-    const startOfNextWeek = new Date(endOfThisWeek);
-    startOfNextWeek.setDate(endOfThisWeek.getDate() + 1);
-    startOfNextWeek.setHours(0, 0, 0, 0);
-    
-    const endOfNextWeek = new Date(startOfNextWeek);
-    endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-    endOfNextWeek.setHours(23, 59, 59, 999);
-
-    let thisWeek = 0;
-    let nextWeek = 0;
-
-    if (Array.isArray(visibleJobs)) {
-      visibleJobs.forEach(job => {
-        const props = job.all_properties || {};
-        const deadlineStr = getJobDeadlineStr(props, job);
-        const deadline = parseDate(deadlineStr);
-        if (deadline) {
-          if (deadline >= today && deadline <= endOfThisWeek) thisWeek++;
-          if (deadline >= startOfNextWeek && deadline <= endOfNextWeek) nextWeek++;
-        }
-      });
-    }
-
-    return { thisWeek, nextWeek };
-  }, [visibleJobs, today]);
-
-  const trendData = useMemo(() => {
-    const startTrend = new Date(today);
-    startTrend.setMonth(today.getMonth() - 3);
-    // Align to start of week (Monday)
-    startTrend.setDate(startTrend.getDate() - (startTrend.getDay() === 0 ? 6 : startTrend.getDay() - 1));
-    startTrend.setHours(0, 0, 0, 0);
-
-    const endTrend = new Date(today);
-    endTrend.setMonth(today.getMonth() + 3); // 3 months into the future
-    // Align to end of week (Sunday)
-    endTrend.setDate(endTrend.getDate() + (endTrend.getDay() === 0 ? 0 : 7 - endTrend.getDay()));
-    endTrend.setHours(23, 59, 59, 999);
-
-    const weeksCount = Math.ceil((endTrend.getTime() - startTrend.getTime()) / (1000 * 3600 * 24 * 7));
-    
-    const data = new Array(weeksCount).fill(0).map((_, i) => {
-      const weekStart = new Date(startTrend);
-      weekStart.setDate(startTrend.getDate() + i * 7);
-      return {
-        date: weekStart,
-        count: 0,
-        expectedCount: undefined as number | undefined,
-        isFuture: weekStart > today
-      };
-    });
-
-    const processJobs = (jobList: Job[]) => {
-      if (Array.isArray(jobList)) {
-        jobList.forEach(job => {
-          const props = job.all_properties || {};
-          const deadlineStr = getJobDeadlineStr(props, job);
-          const deadline = parseDate(deadlineStr);
-          if (deadline && deadline >= startTrend && deadline <= endTrend) {
-            const weekIndex = Math.floor((deadline.getTime() - startTrend.getTime()) / (1000 * 3600 * 24 * 7));
-            if (weekIndex >= 0 && weekIndex < weeksCount) {
-              data[weekIndex].count++;
-            }
-          }
-        });
-      }
-    };
-
-    if (Array.isArray(visibleHistoricalJobs) && visibleHistoricalJobs.length > 0) {
-      // Use historical jobs for past data
-      processJobs(visibleHistoricalJobs.filter(j => {
-        if (selectedOwner && selectedOwner !== 'all') {
-          const isOwner = j.owner_names?.some(name => 
-            name.toLowerCase().includes(selectedOwner.toLowerCase()) || 
-            selectedOwner.toLowerCase().includes(name.toLowerCase())
-          );
-          if (!isOwner) return false;
-        }
-        const props = j.all_properties || {};
-        const deadlineStr = props.frist_for_fotografering || props.dato_og_klokkeslett || j.due_date;
-        const deadline = parseDate(deadlineStr);
-        return deadline && deadline <= today;
-      }));
-      // Use current jobs for future data
-      processJobs(Array.isArray(visibleJobs) ? visibleJobs.filter(j => {
-        const props = j.all_properties || {};
-        const deadlineStr = props.frist_for_fotografering || props.dato_og_klokkeslett || j.due_date;
-        const deadline = parseDate(deadlineStr);
-        return deadline && deadline > today;
-      }) : []);
-    } else {
-      processJobs(visibleJobs);
-    }
-    
-    // Calculate a granular weekly historical pattern from all historical data
-    const globalWeeklyAverages: Record<number, number> = {};
-    if (Array.isArray(visibleHistoricalJobs) && visibleHistoricalJobs.length > 0) {
-      const countsByWeekAndYear: Record<number, Record<number, number>> = {};
-      visibleHistoricalJobs.forEach(job => {
-        const props = job.all_properties || {};
-        const deadlineStr = getJobDeadlineStr(props, job);
-        const deadline = parseDate(deadlineStr);
-        if (deadline && deadline < today) {
-          const week = getWeekNumber(deadline);
-          const year = deadline.getFullYear();
-          if (!countsByWeekAndYear[week]) countsByWeekAndYear[week] = {};
-          countsByWeekAndYear[week][year] = (countsByWeekAndYear[week][year] || 0) + 1;
-        }
-      });
-
-      for (let w = 1; w <= 53; w++) {
-        if (countsByWeekAndYear[w]) {
-          const years = Object.keys(countsByWeekAndYear[w]);
-          const sum = Object.values(countsByWeekAndYear[w]).reduce((a, b) => a + b, 0);
-          globalWeeklyAverages[w] = sum / years.length;
-        }
-      }
-    }
-
-    const monthlyAverages = MONTHLY_AVERAGES;
-
-    // Calculate expected count for future weeks
-    if (!selectedOwner || selectedOwner === 'all') {
-      data.forEach(d => {
-        if (d.isFuture) {
-          const week = getWeekNumber(d.date);
-          if (globalWeeklyAverages[week] !== undefined) {
-            d.expectedCount = globalWeeklyAverages[week];
-          } else {
-            const month = d.date.getMonth();
-            d.expectedCount = monthlyAverages[month] / 4.33;
-          }
-        }
-      });
-    } else {
-      // Calculate the photographer's share of all jobs over the last 12 months
-      let totalRecent = 0;
-      let photographerRecent = 0;
-      const twelveMonthsAgo = new Date(today);
-      twelveMonthsAgo.setFullYear(today.getFullYear() - 1);
-
-      if (Array.isArray(statsHistoricalJobs)) {
-        statsHistoricalJobs.forEach(job => {
-          const props = job.all_properties || {};
-          const deadlineStr = getJobDeadlineStr(props, job);
-          const deadline = parseDate(deadlineStr);
-          if (deadline && deadline < today && deadline >= twelveMonthsAgo) {
-            totalRecent++;
-            const isOwner = job.owner_names?.some(name => 
-              name.toLowerCase().includes(selectedOwner.toLowerCase()) || 
-              selectedOwner.toLowerCase().includes(name.toLowerCase())
-            );
-            if (isOwner) {
-              photographerRecent++;
-            }
-          }
-        });
-      }
-
-      let scaleFactor = totalRecent > 20 ? (photographerRecent / totalRecent) : 0.2;
-      if (scaleFactor < 0.1) {
-        const isMain = MAIN_PHOTOGRAPHERS.some(p => selectedOwner.toLowerCase().includes(p));
-        if (isMain) scaleFactor = 0.2;
-      }
-
-      data.forEach(d => {
-        if (d.isFuture) {
-          const week = getWeekNumber(d.date);
-          const baseExpected = globalWeeklyAverages[week] !== undefined 
-            ? globalWeeklyAverages[week] 
-            : (monthlyAverages[d.date.getMonth()] / 4.33);
-          
-          d.expectedCount = baseExpected * scaleFactor;
-        }
-      });
-    }
-
-    // Smooth the expected counts slightly so it doesn't look too jagged between months
-    const smoothedData = [...data];
-    for (let i = 1; i < data.length - 1; i++) {
-      if (data[i].isFuture) {
-        const prev = data[i-1].expectedCount !== undefined ? data[i-1].expectedCount! : data[i-1].count;
-        const curr = data[i].expectedCount!;
-        const next = data[i+1].expectedCount !== undefined ? data[i+1].expectedCount! : curr;
-        smoothedData[i] = { ...data[i], expectedCount: (prev + curr + next) / 3 };
-      }
-    }
-    
-    // Final pass: Expected count can never be lower than the actual booked count
-    smoothedData.forEach(d => {
-      if (d.isFuture && d.expectedCount !== undefined) {
-        d.expectedCount = Math.max(d.expectedCount, d.count);
-      }
-    });
-
-    return smoothedData;
-  }, [statsJobs, statsHistoricalJobs, today, selectedOwner, theme.brandGreen]);
-
-  const locationBreakdown = useMemo(() => {
-    let studioCount = 0;
-    let locationCount = 0;
-    let frontOfHouseCount = 0;
-    let nbCount = 0;
-
-    if (Array.isArray(jobs)) {
-      jobs.forEach(job => {
-        if (isJobNB(job)) {
-          nbCount++;
-        } else {
-          const props = job.all_properties || {};
-          const cat = categorizeLocation(getJobLocationStr(props));
-          if (cat === 'foh') frontOfHouseCount++;
-          else if (cat === 'location') locationCount++;
-          else if (cat === 'studio') studioCount++;
-        }
-      });
-    }
-    return { studioCount, locationCount, frontOfHouseCount, nbCount };
-  }, [jobs, isJobNB]);
-
-  const handleLocationCategoryClick = useCallback((category: 'studio' | 'location' | 'foh' | 'nb') => {
-    // Clear other filters first for a clean state
-    if (setSelectedOwner) setSelectedOwner("all");
-    if (setSearchTerm) setSearchTerm("");
-    
-    if (category === 'nb') {
-      if (setSelectedLocations) setSelectedLocations([]);
-      if (setShowNBOnly) setShowNBOnly(true);
-      return;
-    }
-
-    if (!setSelectedLocations || !uniqueLocations) return;
-    
-    let keywords: string[] = [];
-    if (category === 'studio') {
-      keywords = ["maleri", "objekt", "gjenstand", "reprorom", "kunst på papir", "digitalisering"];
-    } else if (category === 'location') {
-      keywords = ["location", "ute"];
-    } else if (category === 'foh') {
-      keywords = ["front of house"];
-    }
-
-    const matched = uniqueLocations.filter(loc => 
-      keywords.some(kw => loc.toLowerCase().includes(kw))
-    );
-    
-    setSelectedLocations(matched);
-    if (setShowNBOnly) setShowNBOnly(false);
-  }, [setSelectedLocations, uniqueLocations, setShowNBOnly, setSelectedOwner, setSearchTerm]);
-
+  // Workload (14 days, per owner)
   const workload = useMemo(() => {
     const endOf14Days = new Date(today);
     endOf14Days.setDate(today.getDate() + 14);
-    
-    const counts: Record<string, { total: number, overdue: number, locations: Record<string, number> }> = {};
-    if (Array.isArray(statsJobs)) {
-      statsJobs.forEach(job => {
-        const props = job.all_properties || {};
-        const deadlineStr = getJobDeadlineStr(props, job);
-        const deadline = parseDate(deadlineStr);
-        if (deadline && deadline <= endOf14Days) {
-          const isOverdue = deadline < today;
-          const owner = job.owner_names?.[0] || "Ufordelt";
-          const rawLoc = (getJobLocationStr(props)).toLowerCase();
-          
-          let locCategory = "Annet";
-          if (rawLoc.includes("front of house")) {
-            locCategory = "Front of House";
-          } else if (rawLoc.includes("location") || rawLoc.includes("ute")) {
-            locCategory = "Ekstern Location";
-          } else if (rawLoc.includes("maleri") || rawLoc.includes("objekt") || rawLoc.includes("gjenstand") || rawLoc.includes("reprorom") || rawLoc.includes("kunst på papir") || rawLoc.includes("digitalisering")) {
-            locCategory = "Studio & Digitalisering";
-          }
-
-          if (!counts[owner]) {
-            counts[owner] = { total: 0, overdue: 0, locations: {} };
-          }
-          counts[owner].total++;
-          if (isOverdue) {
-            counts[owner].overdue++;
-          }
-          counts[owner].locations[locCategory] = (counts[owner].locations[locCategory] || 0) + 1;
-        }
-      });
-    }
-
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => b.total - a.total)
-      .slice(0, 5);
+    const counts: Record<string, { total: number; overdue: number; locations: Record<string, number> }> = {};
+    statsJobs.forEach(job => {
+      const props = job.all_properties || {};
+      const deadlineStr = getJobDeadlineStr(props, job);
+      const deadline = parseDate(deadlineStr);
+      if (deadline && deadline <= endOf14Days) {
+        const isOverdue = deadline < today;
+        const owner = job.owner_names?.[0] || "Ufordelt";
+        const rawLoc = (getJobLocationStr(props)).toLowerCase();
+        let locCategory = "Annet";
+        if (rawLoc.includes("front of house")) locCategory = "Front of House";
+        else if (rawLoc.includes("location") || rawLoc.includes("ute")) locCategory = "Ekstern Location";
+        else if (rawLoc.includes("maleri") || rawLoc.includes("objekt") || rawLoc.includes("gjenstand") || rawLoc.includes("reprorom") || rawLoc.includes("kunst på papir") || rawLoc.includes("digitalisering")) locCategory = "Studio & Digitalisering";
+        if (!counts[owner]) counts[owner] = { total: 0, overdue: 0, locations: {} };
+        counts[owner].total++;
+        if (isOverdue) counts[owner].overdue++;
+        counts[owner].locations[locCategory] = (counts[owner].locations[locCategory] || 0) + 1;
+      }
+    });
+    return Object.entries(counts).sort(([, a], [, b]) => b.total - a.total).slice(0, 8);
   }, [statsJobs, today]);
 
-  const [aiRecommendations, setAiRecommendations] = useState<Record<string, { name: string, reasons: string[] }>>({});
-  const fetchingRefs = useRef<Set<string>>(new Set());
-  const [isFetchingAI, setIsFetchingAI] = useState<Record<string, boolean>>({});
-
-  const handleFetchAIRecommendation = async (e: React.MouseEvent, job: Job) => {
-    e.stopPropagation();
-    if (aiRecommendations[job.id] || isFetchingAI[job.id]) return;
-
-    setIsFetchingAI(prev => ({ ...prev, [job.id]: true }));
-    try {
-      const rec = await getAIRecommendationForJob(job, workload);
-      if (rec) {
-        setAiRecommendations(prev => ({ ...prev, [job.id]: rec }));
-      }
-    } finally {
-      setIsFetchingAI(prev => ({ ...prev, [job.id]: false }));
-    }
-  };
-
-  const title = selectedOwner && selectedOwner !== "all" 
-    ? `Oversikt for ${selectedOwner}`
-    : "Oversikt for Seksjon Foto";
-
+  // Loading skeleton
   if (loading) {
     return (
-      <div className="p-6 md:p-10 w-full max-w-[1600px] mx-auto space-y-10 animate-pulse">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <div className="h-10 rounded w-64 mb-2 bg-stone-200"></div>
-            <div className="h-4 rounded w-48 bg-stone-200"></div>
-          </div>
-          <div className="text-right">
-            <div className="h-3 rounded w-24 ml-auto mb-1 bg-stone-200"></div>
-            <div className="h-6 rounded w-32 ml-auto bg-stone-200"></div>
-          </div>
+      <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ height: 42, borderRadius: 6, background: panelBg }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+          {[0,1,2,3].map(i => <div key={i} style={{ height: 72, borderRadius: 6, background: panelBg }} />)}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 rounded-2xl bg-stone-200"></div>)}
-        </div>
-        <div className="h-64 rounded-2xl bg-stone-200"></div>
+        <div style={{ height: 200, borderRadius: 6, background: panelBg }} />
+        <div style={{ height: 160, borderRadius: 6, background: panelBg }} />
       </div>
     );
   }
 
-  const cardDensity = theme.cardSettings?.cardDensity || 'comfortable';
-  const paddingClass = cardDensity === 'compact' ? 'p-3' : cardDensity === 'spacious' ? 'p-6' : 'p-4';
-  const gapClass = cardDensity === 'compact' ? 'gap-2' : cardDensity === 'spacious' ? 'gap-4' : 'gap-3';
+  const title = selectedOwner && selectedOwner !== "all"
+    ? `Oversikt · ${selectedOwner}`
+    : "Oversikt · Seksjon Foto";
+
+  const todayStr = new Date().toLocaleDateString("nb-NO", { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+  const subtitle = `${todayStr} · ${visibleJobs.length} AKTIVE`;
+
+  // Upcoming: format day label
+  const formatDayLabel = (job: Job) => {
+    const props = job.all_properties || {};
+    const deadlineStr = getJobDeadlineStr(props, job);
+    const deadline = parseDate(deadlineStr);
+    if (!deadline) return '—';
+    const weekdays = ['SØN', 'MAN', 'TIR', 'ONS', 'TOR', 'FRE', 'LØR'];
+    return `${weekdays[deadline.getDay()]} ${deadline.getDate()}`;
+  };
 
   return (
-    <div className="p-4 md:p-10 w-full max-w-[1600px] mx-auto space-y-10 min-h-screen transition-colors duration-500">
-      {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="flex-1">
-          <h2 className="text-2xl md:text-4xl font-serif font-medium text-stone-900">{title}</h2>
-          <p className="text-stone-400 mt-2">Her er status for fotooppdragene i dag.</p>
-          
-          {/* Search & Filters */}
-          <div className="mt-8 flex flex-col md:flex-row gap-4 max-w-4xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors text-stone-400" />
-              <input
-                type="text"
-                placeholder="Søk i alle oppdrag..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm?.(e.target.value)}
-                className="
-                  w-full pl-11 pr-10 py-3 border rounded-xl text-xs font-bold uppercase tracking-wider transition-all focus:outline-none focus:ring-2
-                  bg-stone-100 border-stone-200 text-stone-900 placeholder:text-stone-400 focus:ring-stone-900/10 shadow-sm
-                "
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm?.("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-stone-100 text-stone-400 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: bg, color: textPrimary, fontFamily: SANS, overflow: 'hidden' }}>
 
-            <div className="flex gap-2 shrink-0">
-              {/* Owner Filter */}
-              <div className="relative">
-                <select
-                  value={selectedOwner || "all"}
-                  onChange={(e) => setSelectedOwner?.(e.target.value)}
-                  className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-100 text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
-                >
-                  <option value="all">Alle Fotografer</option>
-                  {uniqueOwners.map(owner => (
-                    <option key={owner} value={owner}>{owner}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setShowOwnerSheet(true)}
-                  className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-100 text-stone-900 shadow-sm whitespace-nowrap"
-                >
-                  {selectedOwner && selectedOwner !== 'all' ? selectedOwner : 'Alle Fotografer'}
-                </button>
-              </div>
-
-              {/* Location Filter */}
-              <div className="relative">
-                <select
-                  value={selectedLocations[0] || "all"}
-                  onChange={(e) => setSelectedLocations?.(e.target.value === "all" ? [] : [e.target.value])}
-                  className="hidden md:block px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-100 text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10 shadow-sm"
-                >
-                  <option value="all">Alle lokasjoner</option>
-                  {uniqueLocations.map(loc => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setShowLocationSheet(true)}
-                  className="md:hidden px-4 py-3 border border-stone-200 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-stone-100 text-stone-900 shadow-sm whitespace-nowrap"
-                >
-                  {selectedLocations.length > 0 ? selectedLocations[0] : 'Alle lokasjoner'}
-                </button>
-              </div>
-
-              {/* NB Filter */}
-              <div className="flex items-center gap-2 px-4 py-3 border border-stone-200 rounded-xl bg-stone-100 shadow-sm">
-                <input
-                  type="checkbox"
-                  id="dashboard-nb-filter"
-                  checked={showNBOnly}
-                  onChange={(e) => setShowNBOnly?.(e.target.checked)}
-                  className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900/10 cursor-pointer"
-                />
-                <label 
-                  htmlFor="dashboard-nb-filter" 
-                  className="text-[10px] font-bold uppercase tracking-widest text-stone-900 cursor-pointer select-none"
-                >
-                  Nasjonalbiblioteket
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-4">
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Dagens dato</p>
-            <p className="text-lg font-medium text-stone-900">
-              {new Date().toLocaleDateString("nb-NO", { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
-          
-          {/* Refresh & Clear Buttons */}
-          <div className="flex items-center gap-2">
-            {clearFilters && hasActiveFilters && (
-              <button 
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all bg-red-50 text-red-600 hover:bg-red-100"
-              >
-                Tøm filtre
-              </button>
-            )}
-            
-            {onRefresh && (
-              <button 
-                onClick={onRefresh}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all bg-stone-100 text-stone-500 hover:text-stone-900 hover:bg-stone-200"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Oppdater data
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      <DashboardStats 
-        jobs={statsJobs} 
-        todayEventsCount={todayEvents.length} 
-        onNavigateToBrowse={onNavigateToBrowse}
+      {/* CmdBar */}
+      <DopCmdbar
+        title={title}
+        subtitle={subtitle}
+        bg={bg}
+        borderColor={border}
+        textPrimary={textPrimary}
+        textMuted={textMuted}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onRefresh={onRefresh}
       />
 
-      {/* Trend Overview (Full Width) */}
-      <section className="p-6 rounded-2xl border bg-stone-100 border-stone-200 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-stone-400">Frist-oversikt</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-stone-100 text-stone-600">
-                  <CalendarIcon className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-stone-900">Denne uken</p>
-                  <p className="text-[10px] text-stone-400">Totalt antall frister</p>
-                </div>
-              </div>
-              <span className="text-xl font-serif font-medium text-stone-900">{weekStats.thisWeek}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-stone-50 text-stone-500">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-stone-900">Neste uke</p>
-                  <p className="text-[10px] text-stone-400">Kommende frister</p>
-                </div>
-              </div>
-              <span className="text-xl font-serif font-medium text-stone-900">{weekStats.nextWeek}</span>
-            </div>
-          </div>
-          
-          <div className="md:col-span-2 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Trend (Siste 6 mnd + 2 mnd)</p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.brandGreen }}></div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">Historikk</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-stone-400"></div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">Kommende</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">Forventet</span>
-                </div>
-              </div>
-            </div>
-            <div className="w-full">
-              <TrendChart data={trendData} color={theme.brandGreen} />
-            </div>
-          </div>
+      {/* Scrollable body */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+
+        {/* ── Stat strip ── */}
+        <div style={{ padding: '14px 18px 0', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+          <DopStatCard label="Totalt" value={visibleJobs.length} desc="aktive oppdrag" valueColor={textPrimary} bg={panelBg} borderColor={border} inkColor={textPrimary} />
+          <DopStatCard label="Kritisk" value={criticalJobs.length} desc="> 60 dager" valueColor={critical} bg={critBg} borderColor={border} inkColor={textPrimary} />
+          <DopStatCard label="Over frist" value={overdueJobs.length} desc="1–60 dager" valueColor={warn} bg={warnBg} borderColor={border} inkColor={textPrimary} />
+          <DopStatCard label="Innen frist" value={onTimeCount} desc="på spor" valueColor={ok} bg={okBg} borderColor={border} inkColor={textPrimary} />
         </div>
-      </section>
 
-      {/* Bottom Sheets - Mobile View */}
-      <div className="md:hidden">
-        <AnimatePresence>
-          {/* Owner Sheet */}
-          {showOwnerSheet && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowOwnerSheet(false)}
-                className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
-              >
-                <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
-                <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
-                  <h3 className="text-lg font-serif font-bold text-stone-900">Velg fotograf</h3>
-                  <button 
-                    onClick={() => {
-                      setSelectedOwner?.('all');
-                      setShowOwnerSheet(false);
-                    }}
-                    className="text-[10px] font-bold uppercase tracking-widest text-red-600 hover:text-red-700"
-                  >
-                    Nullstill
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => {
-                        setSelectedOwner?.('all');
-                        setShowOwnerSheet(false);
-                      }}
-                      className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${
-                        (!selectedOwner || selectedOwner === 'all') 
-                          ? 'bg-stone-900 text-white' 
-                          : 'text-stone-600 hover:bg-stone-50'
-                      }`}
-                    >
-                      Alle Fotografer
-                    </button>
-                    {uniqueOwners.map(owner => (
-                      <button
-                        key={owner}
-                        onClick={() => {
-                          setSelectedOwner?.(owner);
-                          setShowOwnerSheet(false);
-                        }}
-                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${
-                          selectedOwner === owner 
-                            ? 'bg-stone-900 text-white' 
-                            : 'text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        {owner}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
+        {/* ── Main grid ── */}
+        <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
 
-          {/* Location Sheet */}
-          {showLocationSheet && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowLocationSheet(false)}
-                className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
-              >
-                <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
-                <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
-                  <h3 className="text-lg font-serif font-bold text-stone-900">Velg lokasjon</h3>
-                  <button 
-                    onClick={() => {
-                      setSelectedLocations?.([]);
-                      setShowLocationSheet(false);
-                    }}
-                    className="text-[10px] font-bold uppercase tracking-widest text-red-600 hover:text-red-700"
-                  >
-                    Nullstill
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => {
-                        setSelectedLocations?.([]);
-                        setShowLocationSheet(false);
-                      }}
-                      className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${
-                        selectedLocations.length === 0 
-                          ? 'bg-stone-900 text-white' 
-                          : 'text-stone-600 hover:bg-stone-50'
-                      }`}
-                    >
-                      Alle lokasjoner
-                    </button>
-                    {uniqueLocations.map(loc => (
-                      <button
-                        key={loc}
-                        onClick={() => {
-                          setSelectedLocations?.([loc]);
-                          setShowLocationSheet(false);
-                        }}
-                        className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${
-                          selectedLocations.includes(loc) 
-                            ? 'bg-stone-900 text-white' 
-                            : 'text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        {loc}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Main Content Column */}
-        <div className="xl:col-span-2 space-y-8">
-          {showNBOnly ? (
-            <section className="p-6 rounded-2xl border bg-stone-100 border-stone-200 shadow-sm border-t-4" style={{ borderTopColor: '#7a68a8' }}>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
-                    <Library className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-stone-900">Nasjonalbiblioteket</h3>
-                    <p className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">{visibleJobs.length} oppdrag sendes til NB</p>
-                  </div>
-                </div>
+          {/* DAGENS OPPGAVER — spans 2 cols */}
+          <div style={{ background: panelBg, border: `1px solid ${border}`, borderRadius: 6, gridColumn: 'span 2' }}>
+            <SectionHead label="DAGENS OPPGAVER" panelBg={panelBg} borderColor={border} textPrimary={textPrimary}>
+              <DopPill bg={okBg} fg={ok}>{todayJobs.length} FOR I DAG</DopPill>
+              <div style={{ flex: 1 }} />
+              <span style={{ fontFamily: MONO, fontSize: 10, color: textMuted }}>Klikk for å åpne</span>
+            </SectionHead>
+            {/* Column headers */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '24px 20px 1.4fr 0.9fr 90px 90px 100px 70px',
+              ...dopSmallcap,
+              color: textMuted,
+              padding: '7px 14px',
+              borderBottom: `1px solid ${border}`,
+              gap: 8,
+              background: panelBg,
+            }}>
+              <div /><div>#</div><div>Kunde</div><div>Type</div>
+              <div style={{ textAlign: 'right' }}>Fotograf</div>
+              <div style={{ textAlign: 'right' }}>Frist</div>
+              <div style={{ textAlign: 'right' }}>Status</div>
+              <div />
+            </div>
+            {todayJobs.length === 0 ? (
+              <div style={{ padding: '20px 14px', textAlign: 'center', color: textMuted, fontFamily: MONO, fontSize: 11 }}>
+                Ingen oppdrag med frist i dag
               </div>
-              <JobTable
-                jobs={visibleJobs}
-                onSelectJob={onSelectJob}
-                title=""
+            ) : todayJobs.slice(0, 10).map((job, i) => (
+              <TodayRow key={job.id} job={job} index={i} onSelectJob={onSelectJob}
+                bg={bg} panelBg={panelBg} borderColor={border}
+                textPrimary={textPrimary} textSecondary={textSecondary} textMuted={textMuted}
+                okColor={ok} okBg={okBg}
               />
-            </section>
-          ) : (
-            <>
-              {/* Dagens fokus */}
-          <section className="p-6 rounded-2xl border bg-stone-100 border-stone-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400">Dagens fokus</h3>
-              <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-stone-100 text-stone-500">
-                {todayEvents.length} oppdrag i dag
-              </span>
-            </div>
-            <JobTable
-              jobs={todayEvents}
-              onSelectJob={onSelectJob}
-              title=""
-            />
-          </section>
+            ))}
+          </div>
 
-          {/* Forfaller denne uken */}
-          <section className="p-6 rounded-2xl border bg-stone-100 border-stone-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-stone-400">Forfaller denne uken</h3>
-              <button 
-                onClick={() => onNavigateToBrowse?.('next7')}
-                className="text-[10px] font-bold uppercase tracking-widest hover:underline text-stone-500"
-              >
-                Se alle
-              </button>
-            </div>
-            
-            {thisWeekJobs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {thisWeekJobs.map(job => (
-                  <DashboardJobCard
-                    key={job.id}
-                    job={job}
-                    onSelectJob={onSelectJob}
-                    variant="weekly"
-                    nmDataMap={nmDataMap}
-                    dimuDataMap={dimuDataMap}
-                    setPreviewImage={setPreviewImage}
-                  />
+          {/* KRITISK OVER FRIST */}
+          <div style={{ background: panelBg, border: `1px solid ${border}`, borderRadius: 6 }}>
+            <SectionHead label="KRITISK OVER FRIST" panelBg={panelBg} borderColor={border} textPrimary={textPrimary}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: critical, display: 'inline-block' }} />
+              <DopPill bg={critBg} fg={critical}>{criticalJobs.length}</DopPill>
+              <button onClick={() => onNavigateToBrowse?.('critical')} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: MONO, fontSize: 10, color: textMuted, textDecoration: 'underline' }}>SE ALLE</button>
+            </SectionHead>
+            {criticalJobs.length === 0 ? (
+              <div style={{ padding: '20px 14px', textAlign: 'center', color: textMuted, fontFamily: MONO, fontSize: 11 }}>Ingen kritiske oppdrag</div>
+            ) : criticalJobs.slice(0, 8).map(job => (
+              <CompactRow key={job.id} job={job} onSelectJob={onSelectJob}
+                rightText={`+${getDaysOverdue(job, today)}d`}
+                rightColor={critical}
+                bg={bg} panelBg={panelBg} borderColor={border}
+                textPrimary={textPrimary} textMuted={textMuted}
+              />
+            ))}
+          </div>
+
+          {/* KOMMENDE */}
+          <div style={{ background: panelBg, border: `1px solid ${border}`, borderRadius: 6 }}>
+            <SectionHead label="KOMMENDE" panelBg={panelBg} borderColor={border} textPrimary={textPrimary}>
+              <DopPill bg={warnBg} fg={warn}>{overdueJobs.length} OVER FRIST</DopPill>
+              <div style={{ flex: 1 }} />
+              <span style={{ fontFamily: MONO, fontSize: 10, color: textMuted }}>DENNE UKEN · {upcomingJobs.length}</span>
+            </SectionHead>
+            {overdueJobs.length === 0 && upcomingJobs.length === 0 ? (
+              <div style={{ padding: '20px 14px', textAlign: 'center', color: textMuted, fontFamily: MONO, fontSize: 11 }}>Ingen kommende oppdrag</div>
+            ) : [...overdueJobs.slice(0, 3), ...upcomingJobs.slice(0, 4)].slice(0, 7).map(job => {
+              const p = getJobPriority(job, today);
+              const daysOver = getDaysOverdue(job, today);
+              const isOv = p === 'high';
+              return (
+                <WeekRow key={job.id} job={job}
+                  dayLabel={isOv ? `+${daysOver}D` : formatDayLabel(job)}
+                  onSelectJob={onSelectJob}
+                  bg={bg} panelBg={panelBg} borderColor={border}
+                  textPrimary={textPrimary} textMuted={textMuted}
+                  pillBg={isOv ? warnBg : okBg}
+                  pillFg={isOv ? warn : ok}
+                  pillText={isOv ? `+${daysOver}D` : formatDayLabel(job)}
+                />
+              );
+            })}
+          </div>
+
+          {/* ARBEIDSMENGDE — spans 2 cols */}
+          <div style={{ background: panelBg, border: `1px solid ${border}`, borderRadius: 6, gridColumn: 'span 2' }}>
+            <SectionHead label="ARBEIDSMENGDE · 14 DAGER" panelBg={panelBg} borderColor={border} textPrimary={textPrimary}>
+              <div style={{ flex: 1 }} />
+              <div style={{ display: 'flex', gap: 12, fontFamily: MONO, fontSize: 10, color: textMuted }}>
+                {Object.entries(WORKLOAD_COLORS).map(([label, color]) => (
+                  <span key={label}><span style={{ color }}>■</span> {label.split(' ')[0].toUpperCase()}</span>
                 ))}
               </div>
-            ) : (
-              <div className="p-8 text-center text-stone-400 text-sm border-2 border-dashed rounded-2xl border-stone-100">
-                Ingen flere frister denne uken.
-              </div>
-            )}
-          </section>
-
-          {/* Jobber til fordeling */}
-          <section className="p-6 rounded-2xl border bg-stone-100 border-stone-200 shadow-sm">
-            <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-stone-400">Jobber til fordeling</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {distributionJobs.length > 0 ? distributionJobs.map(job => (
-                <DashboardJobCard
-                  key={job.id}
-                  job={job}
-                  onSelectJob={onSelectJob}
-                  variant="distribution"
-                  aiRecommendation={aiRecommendations[job.id]}
-                  isFetchingAI={!aiRecommendations[job.id] && fetchingRefs.current.has(job.id)}
-                  onFetchAI={handleFetchAIRecommendation}
-                />
-              )) : (
-                <div className="col-span-full p-8 text-center text-stone-400 text-sm border-2 border-dashed rounded-2xl border-stone-100">
-                  Ingen jobber til fordeling akkurat nå.
-                </div>
-              )}
+            </SectionHead>
+            {/* Table header */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '150px 50px 1fr 60px 50px 50px',
+              ...dopSmallcap, color: textMuted,
+              padding: '7px 14px', borderBottom: `1px solid ${border}`, gap: 12,
+              background: panelBg,
+            }}>
+              <div>Fotograf</div>
+              <div style={{ textAlign: 'right' }}>Total</div>
+              <div>Fordeling</div>
+              <div style={{ textAlign: 'right' }}>Over</div>
+              <div style={{ textAlign: 'right' }}>FOH</div>
+              <div style={{ textAlign: 'right' }}>OK</div>
             </div>
-          </section>
-            </>
+            {workload.length === 0 ? (
+              <div style={{ padding: '20px 14px', textAlign: 'center', color: textMuted, fontFamily: MONO, fontSize: 11 }}>Ingen oppdrag de neste 14 dagene</div>
+            ) : workload.map(([owner, data]) => (
+              <WorkloadRow key={owner} owner={owner} data={data}
+                borderColor={border} textPrimary={textPrimary} textMuted={textMuted}
+                criticalColor={critical} warnColor={warn} okColor={ok} bg={bg}
+              />
+            ))}
+          </div>
+
+          {/* NB Section */}
+          {showNBOnly && (
+            <div style={{ background: panelBg, border: `1px solid ${border}`, borderRadius: 6, gridColumn: 'span 2' }}>
+              <SectionHead label="NASJONALBIBLIOTEKET" panelBg={panelBg} borderColor={border} textPrimary={textPrimary}>
+                <BookOpen size={14} style={{ color: theme.statusNB }} />
+                <DopPill bg={purpleBg} fg={theme.statusNB}>{visibleJobs.length} OPPDRAG</DopPill>
+              </SectionHead>
+              {visibleJobs.slice(0, 10).map(job => (
+                <CompactRow key={job.id} job={job} onSelectJob={onSelectJob}
+                  rightText={(() => { const d = getDaysOverdue(job, today); return d > 0 ? `+${d}d` : `${Math.abs(d)}d`; })()}
+                  rightColor={textSecondary}
+                  bg={bg} panelBg={panelBg} borderColor={border}
+                  textPrimary={textPrimary} textMuted={textMuted}
+                />
+              ))}
+            </div>
           )}
         </div>
-
-        {/* Sidebar Column */}
-        <WorkloadSidebar
-          workload={workload}
-          locationBreakdown={locationBreakdown}
-          onLocationClick={handleLocationCategoryClick}
-        />
       </div>
-
-      <ImagePreviewModal
-        isOpen={!!previewImage}
-        onClose={() => setPreviewImage(null)}
-        url={previewImage?.url || ""}
-        title={previewImage?.title || ""}
-      />
     </div>
   );
 };

@@ -1,19 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Job } from "../types";
 import { motion, AnimatePresence } from "motion/react";
-import { User } from "lucide-react";
-import { getDeadlineInfo, getJobDate } from "../utils/jobUtils";
+import { Search, X, SlidersHorizontal, Plus } from "lucide-react";
+import { getDeadlineInfo, getJobDate, getJobDeadlineStr, getJobTypeStr, getJobLocationStr, parseDate, formatDate } from "../utils/jobUtils";
 import { SortKey, DateFilter } from "../hooks/useJobFilters";
 import { useTheme } from "../context/ThemeContext";
+import { DopPill, dopSmallcap } from "./dop/DopPrimitives";
+import { BrowseFilters } from "./browse/BrowseFilters";
+import { BrowseGrid } from "./browse/BrowseGrid";
+import { BrowseList } from "./browse/BrowseList";
 import { useNMData } from "../hooks/useNMData";
 import { useDiMuData } from "../hooks/useDiMuData";
 import { ImagePreviewModal } from "./ui/ImagePreviewModal";
 
-// Import the sub-components
-import { BrowseFilters } from "./browse/BrowseFilters";
-import { BrowseGrid } from "./browse/BrowseGrid";
-import { BrowseList } from "./browse/BrowseList";
-import { BrowseToolbar } from "./browse/BrowseToolbar";
+const MONO = '"JetBrains Mono","IBM Plex Mono",ui-monospace,monospace';
+const SANS = '"Inter","Helvetica Neue",Helvetica,Arial,sans-serif';
+const SIDE = '#2a251c';
+
+type ListMode = 'kanban' | 'table' | 'grid';
 
 interface BrowseViewProps {
   jobs: Job[];
@@ -44,9 +48,137 @@ interface BrowseViewProps {
   clearFilters?: () => void;
 }
 
-export const BrowseView: React.FC<BrowseViewProps> = ({ 
-  jobs, 
-  onSelectJob, 
+// ─── Kanban card ─────────────────────────────────────────────────────────────
+function KanbanCard({ job, onSelectJob, pillBg, pillFg, pillText, panelBg, bg, borderColor, textPrimary, textSecondary, textMuted }: {
+  job: Job; onSelectJob: (job: Job) => void;
+  pillBg: string; pillFg: string; pillText: string;
+  panelBg: string; bg: string; borderColor: string;
+  textPrimary: string; textSecondary: string; textMuted: string;
+}) {
+  const [h, setH] = useState(false);
+  const props = job.all_properties || {};
+  const typeStr = getJobTypeStr(props) || job.type || '';
+  const deadline = getJobDeadlineStr(props, job);
+  const client = job.title?.split(' - ')[0] || job.title || '—';
+  const owner = job.owner_names?.[0] || '';
+  const ownerInitials = owner.split(' ').map((w: string) => w[0]).join('').slice(0, 2);
+
+  return (
+    <div
+      onClick={() => onSelectJob(job)}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        background: panelBg,
+        border: `1px solid ${borderColor}`,
+        borderRadius: 6,
+        padding: '10px 12px',
+        cursor: 'pointer',
+        transition: 'transform .12s, box-shadow .12s',
+        transform: h ? 'translateY(-1px)' : 'none',
+        boxShadow: h ? `0 2px 0 ${textPrimary}22` : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+      }}
+    >
+      {/* Top row: id + pill */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: textMuted }}>{job.id}</span>
+        <DopPill bg={pillBg} fg={pillFg} bold>{pillText}</DopPill>
+      </div>
+      {/* Client */}
+      <div style={{ fontWeight: 600, fontSize: 14, fontFamily: SANS, color: textPrimary, lineHeight: 1.2 }}>{client}</div>
+      {/* Tags */}
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {typeStr && <DopPill bg={bg} fg={textSecondary}>{typeStr.slice(0, 18)}</DopPill>}
+      </div>
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+        <span style={{
+          width: 22, height: 22, borderRadius: '50%',
+          background: '#d97757', color: '#2a251c',
+          fontSize: 10, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: MONO, flexShrink: 0,
+        }}>
+          {ownerInitials || '?'}
+        </span>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: textMuted }}>
+          {deadline ? formatDate(deadline) : '—'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Kanban column ────────────────────────────────────────────────────────────
+function KanbanCol({ label, sub, count, accentColor, accentBg, jobs, onSelectJob, bg, panelBg, borderColor, textPrimary, textSecondary, textMuted, pillBg, pillFg, today }: {
+  label: string; sub: string; count: number;
+  accentColor: string; accentBg: string;
+  jobs: Job[]; onSelectJob: (job: Job) => void;
+  bg: string; panelBg: string; borderColor: string;
+  textPrimary: string; textSecondary: string; textMuted: string;
+  pillBg: string; pillFg: string; today: Date;
+}) {
+  const getDaysLabel = (job: Job) => {
+    const props = job.all_properties || {};
+    const deadline = getJobDeadlineStr(props, job);
+    const d = parseDate(deadline);
+    if (!d) return '—';
+    d.setHours(0, 0, 0, 0);
+    const diff = Math.round((d.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    if (diff === 0) return 'I DAG';
+    if (diff > 0) return `${diff}D`;
+    return `+${Math.abs(diff)}D`;
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+      {/* Column header */}
+      <div style={{
+        padding: '8px 12px',
+        background: accentBg,
+        borderRadius: 6,
+        border: `1px solid ${borderColor}`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: accentColor, flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, color: accentColor, letterSpacing: '0.06em' }}>{label}</div>
+          <div style={{ fontFamily: MONO, fontSize: 9.5, color: textMuted, marginTop: 1 }}>{sub}</div>
+        </div>
+        <span style={{
+          fontFamily: MONO, fontSize: 11, fontWeight: 700,
+          background: accentBg, color: accentColor,
+          padding: '1px 7px', borderRadius: 3,
+          border: `1px solid ${accentColor}33`,
+        }}>{count}</span>
+      </div>
+      {/* Cards */}
+      {jobs.map(job => (
+        <KanbanCard
+          key={job.id} job={job} onSelectJob={onSelectJob}
+          pillBg={pillBg} pillFg={pillFg} pillText={getDaysLabel(job)}
+          panelBg={panelBg} bg={bg} borderColor={borderColor}
+          textPrimary={textPrimary} textSecondary={textSecondary} textMuted={textMuted}
+        />
+      ))}
+      {jobs.length === 0 && (
+        <div style={{ padding: '16px 12px', textAlign: 'center', fontFamily: MONO, fontSize: 10, color: textMuted, border: `1px dashed ${borderColor}`, borderRadius: 6 }}>
+          TOM
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── BrowseView ──────────────────────────────────────────────────────────────
+export const BrowseView: React.FC<BrowseViewProps> = ({
+  jobs,
+  onSelectJob,
   layout,
   setLayout,
   searchTerm,
@@ -72,134 +204,301 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
   loading = false,
   clearFilters
 }) => {
-  const [showFilters, setShowFilters] = useState(false);
-  const [showOwnerSheet, setShowOwnerSheet] = useState(false);
   const { theme } = useTheme();
+  const [listMode, setListMode] = useState<ListMode>('kanban');
+  const [showFilters, setShowFilters] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
-  // Collect all unique NM IDs from the jobs for indicators
-  const allNmIds = React.useMemo(() => {
+  const allNmIds = useMemo(() => {
     const ids = new Set<string>();
-    if (Array.isArray(jobs)) {
-      jobs.forEach(job => {
-        if (job.nmids) {
-          job.nmids.forEach(id => ids.add(id));
-        }
-      });
-    }
+    if (Array.isArray(jobs)) jobs.forEach(job => job.nmids?.forEach(id => ids.add(id)));
     return Array.from(ids);
   }, [jobs]);
 
   const { nmDataMap } = useNMData(allNmIds);
   const { dimuDataMap } = useDiMuData(allNmIds);
-  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
-  const title = selectedOwner && selectedOwner !== "all" 
-    ? `Bestillinger for ${selectedOwner}`
-    : "Bestillinger";
+  // Theme colors
+  const bg        = theme.stone50;
+  const panelBg   = theme.stone100;
+  const border    = theme.stone200;
+  const textPrimary   = theme.textColorPrimary;
+  const textSecondary = theme.textColorSecondary;
+  const textMuted     = theme.textColorMuted;
+  const critical  = theme.statusCritical;
+  const critBg    = `${critical}18`;
+  const warn      = theme.statusOverdue;
+  const warnBg    = `${warn}18`;
+  const ok        = theme.statusWithin;
+  const okBg      = `${ok}18`;
+  const blue      = theme.statusProgress;
+  const blueBg    = `${blue}18`;
+
+  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
+
+  // Bucket jobs for kanban
+  const { kritisk, overFrist, denneUken, kommende } = useMemo(() => {
+    const kritisk: Job[] = [], overFrist: Job[] = [], denneUken: Job[] = [], kommende: Job[] = [];
+    (Array.isArray(jobs) ? jobs : []).forEach(job => {
+      const props = job.all_properties || {};
+      const deadlineStr = getJobDeadlineStr(props, job);
+      const deadline = parseDate(deadlineStr);
+      if (!deadline) { kommende.push(job); return; }
+      const d = new Date(deadline); d.setHours(0, 0, 0, 0);
+      const diff = Math.round((d.getTime() - today.getTime()) / (1000 * 3600 * 24));
+      if (diff < -60) kritisk.push(job);
+      else if (diff < 0) overFrist.push(job);
+      else if (diff <= 7) denneUken.push(job);
+      else kommende.push(job);
+    });
+    return { kritisk, overFrist, denneUken, kommende };
+  }, [jobs, today]);
+
+  const title = `Bestillinger · ${jobs.length}`;
+  const subtitle = `${counts.overdue} OVER FRIST · ${counts.critical} KRITISK · ${counts.all - counts.critical - counts.overdue} OK`;
+
+  const activeFiltersCount = (selectedOwner && selectedOwner !== 'all' ? 1 : 0)
+    + selectedLocation.length + selectedType.length
+    + (showNBOnly ? 1 : 0)
+    + (dateFilter !== 'all' ? 1 : 0);
 
   if (loading) {
     return (
-      <div className="p-6 md:p-10 w-full max-w-[1600px] mx-auto space-y-8 animate-pulse">
-        <div className="flex flex-col gap-6">
-          <div className="h-10 bg-stone-200 rounded w-64"></div>
-          <div className="h-10 bg-stone-200 rounded-full w-32"></div>
-        </div>
-        <div className="h-10 bg-stone-200 rounded-lg w-full md:w-96"></div>
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className="h-48 bg-stone-200 rounded-2xl"></div>
-          ))}
+      <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14, background: bg }}>
+        <div style={{ height: 42, borderRadius: 6, background: panelBg }} />
+        <div style={{ height: 42, borderRadius: 6, background: panelBg }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, flex: 1 }}>
+          {[0,1,2,3].map(i => <div key={i} style={{ height: 300, borderRadius: 6, background: panelBg }} />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-10 w-full max-w-[1600px] mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          {selectedOwner !== "all" ? (
-            <h2 className="hidden md:block text-2xl md:text-4xl font-serif font-medium text-stone-900">{title}</h2>
-          ) : null}
-          {selectedOwner !== "all" && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border mt-3 w-fit bg-stone-100 border-stone-200">
-              <User className="w-3.5 h-3.5 text-stone-500" />
-              <span className="text-xs font-medium text-stone-900">{selectedOwner}</span>
-            </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: bg, color: textPrimary, fontFamily: SANS }}>
+
+      {/* ── CmdBar ────────────────────────────────────── */}
+      <div style={{
+        borderBottom: `1px solid ${border}`,
+        padding: '10px 18px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        background: bg,
+        flexShrink: 0,
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: SANS }}>{title}</div>
+          <div style={{ fontFamily: MONO, fontSize: 10.5, color: textMuted, letterSpacing: '0.05em', marginTop: 1 }}>{subtitle}</div>
+        </div>
+
+        {/* Search */}
+        <div style={{ position: 'relative', flex: '0 1 220px', minWidth: 140 }}>
+          <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: textMuted, pointerEvents: 'none' }} />
+          <input
+            type="text" placeholder="Søk…"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              paddingLeft: 28, paddingRight: searchTerm ? 28 : 10, paddingTop: 6, paddingBottom: 6,
+              border: `1px solid ${border}`, borderRadius: 5,
+              background: panelBg, fontFamily: MONO, fontSize: 11, color: textPrimary,
+              outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+          {searchTerm && (
+            <button onClick={() => setSearchTerm('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: textMuted, display: 'flex', alignItems: 'center' }}>
+              <X size={12} />
+            </button>
           )}
         </div>
+
+        {/* Mode toggle */}
+        <div style={{ display: 'flex', border: `1px solid ${border}`, borderRadius: 4, overflow: 'hidden', flexShrink: 0 }}>
+          {([['kanban','Kanban'],['table','Tabell'],['grid','Kort']] as [ListMode, string][]).map(([mode, label]) => (
+            <button key={mode} onClick={() => setListMode(mode)}
+              style={{
+                fontFamily: MONO, fontSize: 10.5, padding: '6px 10px',
+                border: 'none',
+                background: listMode === mode ? textPrimary : panelBg,
+                color: listMode === mode ? bg : textSecondary,
+                cursor: 'pointer', letterSpacing: '0.05em',
+                transition: 'background .1s, color .1s',
+              }}>
+              {label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* Filter toggle */}
+        <button
+          onClick={() => setShowFilters(f => !f)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontFamily: MONO, fontSize: 10.5, padding: '6px 10px',
+            border: `1px solid ${showFilters || activeFiltersCount > 0 ? textSecondary : border}`,
+            borderRadius: 4, background: showFilters ? textPrimary : panelBg,
+            color: showFilters ? bg : textSecondary,
+            cursor: 'pointer', letterSpacing: '0.05em', flexShrink: 0,
+            transition: 'background .1s, color .1s',
+          }}
+        >
+          <SlidersHorizontal size={11} />
+          FILTRE {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+        </button>
       </div>
 
-      <BrowseToolbar
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        selectedLocation={selectedLocation}
-        selectedType={selectedType}
-        dateFilter={dateFilter}
-        selectedOwner={selectedOwner}
-        setSelectedOwner={setSelectedOwner}
-        uniqueOwners={uniqueOwners}
-        setShowOwnerSheet={setShowOwnerSheet}
-        showNBOnly={showNBOnly}
-        setShowNBOnly={setShowNBOnly}
-        handleSort={handleSort}
-        sortConfig={sortConfig}
-        layout={layout}
-        setLayout={setLayout}
-      />
-
+      {/* ── Filter panel ─────────────────────────────── */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
+            animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
+            style={{ overflow: 'hidden', flexShrink: 0, borderBottom: `1px solid ${border}` }}
           >
-            <BrowseFilters
-              counts={counts}
-              dateFilter={dateFilter}
-              setDateFilter={setDateFilter}
-              selectedLocation={selectedLocation}
-              setSelectedLocation={setSelectedLocation}
-              uniqueLocations={uniqueLocations}
-              locationCounts={locationCounts}
-              selectedType={selectedType}
-              setSelectedType={setSelectedType}
-              uniqueTypes={uniqueTypes}
-              typeCounts={typeCounts}
-              theme={theme}
-              clearFilters={clearFilters}
-            />
+            <div style={{ padding: '12px 18px', background: panelBg }}>
+              <BrowseFilters
+                counts={counts}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
+                selectedLocation={selectedLocation}
+                setSelectedLocation={setSelectedLocation}
+                uniqueLocations={uniqueLocations}
+                locationCounts={locationCounts}
+                selectedType={selectedType}
+                setSelectedType={setSelectedType}
+                uniqueTypes={uniqueTypes}
+                typeCounts={typeCounts}
+                theme={theme}
+                clearFilters={clearFilters}
+              />
+              {/* Owner filter */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                <span style={{ ...dopSmallcap, color: textMuted, alignSelf: 'center' }}>FOTOGRAF</span>
+                {['all', ...uniqueOwners].map(owner => (
+                  <button key={owner}
+                    onClick={() => setSelectedOwner(owner)}
+                    style={{
+                      fontFamily: MONO, fontSize: 10, padding: '3px 9px',
+                      borderRadius: 3, border: `1px solid ${selectedOwner === owner ? textSecondary : border}`,
+                      background: selectedOwner === owner ? textPrimary : panelBg,
+                      color: selectedOwner === owner ? bg : textSecondary,
+                      cursor: 'pointer', letterSpacing: '0.05em',
+                    }}>
+                    {owner === 'all' ? 'ALLE' : owner.split(' ')[0].toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              {/* NB filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                <input type="checkbox" id="nb-filter" checked={showNBOnly} onChange={e => setShowNBOnly?.(e.target.checked)}
+                  style={{ accentColor: '#d97757', cursor: 'pointer' }} />
+                <label htmlFor="nb-filter" style={{ fontFamily: MONO, fontSize: 10, color: textSecondary, cursor: 'pointer', letterSpacing: '0.06em' }}>
+                  NASJONALBIBLIOTEKET
+                </label>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {jobs.length === 0 ? (
-        <div className="py-20 text-center border-2 border-dashed rounded-2xl border-stone-200">
-          <p className="text-stone-500 text-sm">Ingen oppdrag funnet med valgte filtre.</p>
-        </div>
-      ) : (
-        layout === 'grid' ? (
-          <BrowseGrid
-            jobs={jobs}
-            onSelectJob={onSelectJob}
-            theme={theme}
-            nmDataMap={nmDataMap}
-            dimuDataMap={dimuDataMap}
-            setPreviewImage={setPreviewImage}
-          />
+      {/* ── Content ──────────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {listMode === 'kanban' ? (
+          <div style={{
+            padding: 18,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 14,
+            alignItems: 'start',
+            minWidth: 700,
+          }}>
+            <KanbanCol
+              label="KRITISK" sub="> 60 dager over frist" count={kritisk.length}
+              accentColor={critical} accentBg={critBg}
+              jobs={kritisk} onSelectJob={onSelectJob}
+              bg={bg} panelBg={panelBg} borderColor={border}
+              textPrimary={textPrimary} textSecondary={textSecondary} textMuted={textMuted}
+              pillBg={critBg} pillFg={critical} today={today}
+            />
+            <KanbanCol
+              label="OVER FRIST" sub="1–60 dager" count={overFrist.length}
+              accentColor={warn} accentBg={warnBg}
+              jobs={overFrist} onSelectJob={onSelectJob}
+              bg={bg} panelBg={panelBg} borderColor={border}
+              textPrimary={textPrimary} textSecondary={textSecondary} textMuted={textMuted}
+              pillBg={warnBg} pillFg={warn} today={today}
+            />
+            <KanbanCol
+              label="DENNE UKEN" sub="i dag / snart / 7 dager" count={denneUken.length}
+              accentColor={ok} accentBg={okBg}
+              jobs={denneUken} onSelectJob={onSelectJob}
+              bg={bg} panelBg={panelBg} borderColor={border}
+              textPrimary={textPrimary} textSecondary={textSecondary} textMuted={textMuted}
+              pillBg={okBg} pillFg={ok} today={today}
+            />
+            <KanbanCol
+              label="KOMMENDE" sub="neste uke og fremover" count={kommende.length}
+              accentColor={blue} accentBg={blueBg}
+              jobs={kommende} onSelectJob={onSelectJob}
+              bg={bg} panelBg={panelBg} borderColor={border}
+              textPrimary={textPrimary} textSecondary={textSecondary} textMuted={textMuted}
+              pillBg={blueBg} pillFg={blue} today={today}
+            />
+          </div>
+        ) : listMode === 'table' ? (
+          <div>
+            {jobs.length === 0 ? (
+              <div style={{ padding: '40px 18px', textAlign: 'center', color: textMuted, fontFamily: MONO, fontSize: 11 }}>
+                Ingen oppdrag funnet.
+              </div>
+            ) : (
+              <BrowseList jobs={jobs} onSelectJob={onSelectJob} theme={theme} />
+            )}
+          </div>
         ) : (
-          <BrowseList
-            jobs={jobs}
-            onSelectJob={onSelectJob}
-            theme={theme}
-          />
-        )
-      )}
+          <div style={{ padding: 18 }}>
+            {jobs.length === 0 ? (
+              <div style={{ padding: '40px 18px', textAlign: 'center', color: textMuted, fontFamily: MONO, fontSize: 11 }}>
+                Ingen oppdrag funnet.
+              </div>
+            ) : (
+              <BrowseGrid
+                jobs={jobs}
+                onSelectJob={onSelectJob}
+                theme={theme}
+                nmDataMap={nmDataMap}
+                dimuDataMap={dimuDataMap}
+                setPreviewImage={setPreviewImage}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Status bar ───────────────────────────────── */}
+      <div style={{
+        padding: '7px 18px',
+        background: SIDE,
+        color: 'rgba(239,236,228,0.55)',
+        fontFamily: MONO, fontSize: 10.5,
+        display: 'flex', gap: 20,
+        letterSpacing: '0.05em',
+        flexShrink: 0,
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}>
+        <span style={{ color: '#5ec98a' }}>● CONNECTED</span>
+        <span>{jobs.length} ROWS</span>
+        {activeFiltersCount > 0 && <span style={{ color: '#e8a640' }}>{activeFiltersCount} FILTER{activeFiltersCount > 1 ? 'E' : ''} AKTIVE</span>}
+        <div style={{ flex: 1 }} />
+        <button onClick={clearFilters} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(239,236,228,0.35)', fontFamily: MONO, fontSize: 10, letterSpacing: '0.05em' }}>
+          NULLSTILL
+        </button>
+      </div>
 
       <ImagePreviewModal
         isOpen={!!previewImage}
@@ -207,75 +506,6 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
         url={previewImage?.url || ""}
         title={previewImage?.title || ""}
       />
-
-      {/* Owner Sheet for Mobile */}
-      <AnimatePresence>
-        {showOwnerSheet && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowOwnerSheet(false)}
-              className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-stone-50 z-50 rounded-t-[32px] shadow-2xl flex flex-col max-h-[70vh]"
-            >
-              <div className="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
-              <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100 shrink-0">
-                <h3 className="text-lg font-serif font-bold text-stone-900">Velg fotograf</h3>
-                <button 
-                  onClick={() => {
-                    setSelectedOwner('all');
-                    setShowOwnerSheet(false);
-                  }}
-                  className="text-[10px] font-bold uppercase tracking-widest text-red-600 hover:text-red-700"
-                >
-                  Nullstill
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="space-y-1">
-                  <button
-                    onClick={() => {
-                      setSelectedOwner('all');
-                      setShowOwnerSheet(false);
-                    }}
-                    className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${
-                      (!selectedOwner || selectedOwner === 'all') 
-                        ? 'bg-stone-900 text-white' 
-                        : 'text-stone-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    Alle Fotografer
-                  </button>
-                  {uniqueOwners.map(owner => (
-                    <button
-                      key={owner}
-                      onClick={() => {
-                        setSelectedOwner(owner);
-                        setShowOwnerSheet(false);
-                      }}
-                      className={`w-full text-left px-4 py-4 rounded-xl text-sm font-medium transition-colors ${
-                        selectedOwner === owner 
-                          ? 'bg-stone-900 text-white' 
-                          : 'text-stone-600 hover:bg-stone-50'
-                      }`}
-                    >
-                      {owner}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
