@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Job } from "../../types";
-import { motion } from "motion/react";
-import { Calendar, User, MapPin, FileText, ChevronRight } from "lucide-react";
-import { formatDate, getDeadlineInfo, splitTitle, getJobDate, getLocationIndex, getTypeIndex, getPaletteColor, formatType, formatLocation } from "../../utils/jobUtils";
+import { getDeadlineInfo, splitTitle, getJobDate, formatType, formatLocation } from "../../utils/jobUtils";
 import { ThemeColors } from "../../context/ThemeContext";
 import { useJobData } from "../../context/JobDataContext";
+
+const MONO = '"JetBrains Mono","IBM Plex Mono",ui-monospace,monospace';
+const SANS = '"Inter","Helvetica Neue",Helvetica,Arial,sans-serif';
+const ACCENT = '#d97757';
 
 export interface BrowseListProps {
   jobs: Job[];
@@ -12,110 +14,218 @@ export interface BrowseListProps {
   theme: ThemeColors;
 }
 
-export const BrowseList: React.FC<BrowseListProps> = ({
-  jobs,
-  onSelectJob,
-  theme,
-}) => {
+function TableRow({ job, onSelectJob, theme, stripe }: {
+  job: Job;
+  onSelectJob: (job: Job) => void;
+  theme: ThemeColors;
+  stripe: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
   const { jobOverrides, jobProgress } = useJobData();
+
+  const props = job.all_properties || {};
+  const { name } = splitTitle(job.title);
+  const deadline = getJobDate(job);
+  const deadlineInfo = getDeadlineInfo(deadline, theme);
+  const loc = formatLocation(
+    props.lokasjon_for_fotografering___ny || props.lokasjon_for_fotografering || "",
+    props,
+    job.title
+  );
+  const override = jobOverrides[job.id];
+  const formattedType = override?.customType || formatType(props.type_fotografering || "", props, job.title);
+  const owner = job.owner_names?.[0] || "—";
+  const ownerInitials = owner !== "—"
+    ? owner.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
+
+  const progress = jobProgress?.[job.id];
+
+  const bg = theme.stone50;
+  const panelBg = theme.stone100;
+  const border = theme.stone200;
+  const ink = theme.textColorPrimary;
+  const ink2 = theme.textColorSecondary;
+  const ink3 = theme.textColorMuted;
+
+  const rowBg = hovered
+    ? panelBg
+    : stripe
+    ? `${border}55`
+    : bg;
+
   return (
-    <div className="flex flex-col gap-2">
-      {jobs.map((job) => {
-        const props = job.all_properties || {};
-        const { name } = splitTitle(job.title);
-        const deadline = getJobDate(job);
-        const deadlineInfo = getDeadlineInfo(deadline, theme);
-        const loc = formatLocation(props.lokasjon_for_fotografering___ny || props.lokasjon_for_fotografering || "Ukjent", props, job.title);
-        const locIndex = getLocationIndex(loc);
-        const { bg: locBg, text: locText } = getPaletteColor(theme.locationPalette, locIndex);
-        
-        const typeFotografering = props.type_fotografering || "";
-        const override = jobOverrides[job.id];
-        const formattedType = override?.customType || formatType(typeFotografering, props, job.title);
-        const typeIndex = getTypeIndex(typeFotografering || "");
-        const { bg: typeBg, text: typeText } = getPaletteColor(theme.typePalette, typeIndex);
+    <tr
+      onClick={() => onSelectJob(job)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: rowBg,
+        cursor: "pointer",
+        transition: "background .1s",
+        borderBottom: `1px solid ${border}`,
+      }}
+    >
+      {/* ID */}
+      <td style={{ padding: "9px 12px", fontFamily: MONO, fontSize: 10, color: ink3, whiteSpace: "nowrap" }}>
+        {job.id}
+      </td>
 
-        return (
-          <motion.button
-            key={job.id}
-            whileHover={{ x: 4, backgroundColor: 'rgba(250, 250, 249, 1)' }}
-            onClick={() => onSelectJob(job)}
-            className="group flex items-center justify-between p-4 bg-stone-50 border border-stone-200/60 rounded-xl transition-all text-left relative overflow-hidden"
-          >
-            {override?.sendToNB && (
-              <div 
-                className="absolute top-0 right-0 px-2 py-0.5 text-white text-[8px] font-black rounded-bl shadow-sm z-10"
-                style={{ backgroundColor: theme.statusNB }}
-              >
-                NB
-              </div>
-            )}
-            {/* Progress Bar (Bottom Edge) */}
-            {jobProgress[job.id] && jobProgress[job.id].totalCount > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-stone-100">
-                <div 
-                  className="h-full bg-green-500 transition-all duration-500"
-                  style={{ width: `${(jobProgress[job.id].doneCount / jobProgress[job.id].totalCount) * 100}%` }}
-                />
-              </div>
-            )}
+      {/* NB badge */}
+      <td style={{ padding: "9px 6px", width: 24 }}>
+        {override?.sendToNB && (
+          <span style={{
+            display: "inline-block",
+            fontFamily: MONO, fontSize: 9, fontWeight: 700,
+            padding: "1px 5px", borderRadius: 3,
+            background: `${theme.statusNB}22`,
+            color: theme.statusNB,
+            letterSpacing: "0.06em",
+          }}>NB</span>
+        )}
+      </td>
 
-            <div className="flex items-center gap-6 flex-1 min-w-0">
-              {/* Title & Owner */}
-              <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-                <h3 className="font-medium text-stone-900 truncate group-hover:text-stone-600 transition-colors">
-                  {name}
-                </h3>
-                <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                  <User className="w-3.5 h-3.5" />
-                  <span className="truncate">{props.hubspot_owner_id || "Ufordelt"}</span>
-                </div>
-              </div>
-
-              {/* Location & Type Badges */}
-              <div className="hidden md:flex items-center gap-3 w-[300px] shrink-0">
-                {loc && (
-                  <span 
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider truncate max-w-[140px]"
-                    style={{ backgroundColor: locBg, color: locText }}
-                  >
-                    <MapPin className="w-3 h-3 opacity-70 shrink-0" />
-                    <span className="truncate">{loc}</span>
-                  </span>
-                )}
-                {formattedType && (
-                  <span 
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider truncate max-w-[140px]"
-                    style={{ backgroundColor: typeBg, color: typeText }}
-                  >
-                    <FileText className="w-3 h-3 opacity-70 shrink-0" />
-                    <span className="truncate">{formattedType}</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Deadline */}
-              <div className="hidden sm:flex items-center justify-end w-[140px] shrink-0">
-                {deadlineInfo && (
-                  <div 
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border"
-                    style={{ 
-                      backgroundColor: deadlineInfo.statusColor, 
-                      color: deadlineInfo.statusTextColor,
-                      borderColor: deadlineInfo.statusColor
-                    }}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{deadlineInfo.label}</span>
-                  </div>
-                )}
-              </div>
+      {/* Title */}
+      <td style={{ padding: "9px 12px", maxWidth: 300 }}>
+        <div style={{
+          fontFamily: SANS, fontSize: 13, fontWeight: 600,
+          color: ink,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {name}
+        </div>
+        {progress && progress.totalCount > 0 && (
+          <div style={{ marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ flex: 1, height: 2, background: border, borderRadius: 1, maxWidth: 80 }}>
+              <div style={{
+                height: "100%", borderRadius: 1,
+                background: theme.statusWithin,
+                width: `${(progress.doneCount / progress.totalCount) * 100}%`,
+                transition: "width .3s",
+              }} />
             </div>
+            <span style={{ fontFamily: MONO, fontSize: 9, color: ink3 }}>
+              {progress.doneCount}/{progress.totalCount}
+            </span>
+          </div>
+        )}
+      </td>
 
-            <ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-stone-600 transition-colors ml-4 shrink-0" />
-          </motion.button>
-        );
-      })}
+      {/* Photographer */}
+      <td style={{ padding: "9px 12px", whiteSpace: "nowrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{
+            width: 20, height: 20, borderRadius: "50%",
+            background: ACCENT, color: "#2a251c",
+            fontSize: 9, fontWeight: 700, fontFamily: MONO,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            {ownerInitials}
+          </span>
+          <span style={{ fontFamily: MONO, fontSize: 10.5, color: ink2, whiteSpace: "nowrap" }}>
+            {owner.split(" ")[0]}
+          </span>
+        </div>
+      </td>
+
+      {/* Type */}
+      <td style={{ padding: "9px 12px" }}>
+        {formattedType ? (
+          <span style={{
+            fontFamily: MONO, fontSize: 10, color: ink2,
+            background: panelBg, border: `1px solid ${border}`,
+            borderRadius: 3, padding: "2px 7px",
+            whiteSpace: "nowrap", letterSpacing: "0.04em",
+          }}>
+            {formattedType.slice(0, 20)}
+          </span>
+        ) : (
+          <span style={{ fontFamily: MONO, fontSize: 10, color: ink3 }}>—</span>
+        )}
+      </td>
+
+      {/* Location */}
+      <td style={{ padding: "9px 12px" }}>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: ink2 }}>
+          {loc || "—"}
+        </span>
+      </td>
+
+      {/* Deadline */}
+      <td style={{ padding: "9px 12px", whiteSpace: "nowrap" }}>
+        {deadline ? (
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontFamily: MONO, fontSize: 10, fontWeight: 600,
+            color: deadlineInfo.statusColor,
+            background: `${deadlineInfo.statusColor}18`,
+            border: `1px solid ${deadlineInfo.statusColor}44`,
+            borderRadius: 3, padding: "2px 8px",
+            letterSpacing: "0.04em",
+          }}>
+            {deadlineInfo.label}
+          </span>
+        ) : (
+          <span style={{ fontFamily: MONO, fontSize: 10, color: ink3 }}>—</span>
+        )}
+      </td>
+
+      {/* Arrow */}
+      <td style={{ padding: "9px 12px", width: 24, textAlign: "center" }}>
+        <span style={{ fontFamily: MONO, fontSize: 11, color: hovered ? ink : ink3, transition: "color .1s" }}>›</span>
+      </td>
+    </tr>
+  );
+}
+
+export const BrowseList: React.FC<BrowseListProps> = ({ jobs, onSelectJob, theme }) => {
+  const border = theme.stone200;
+  const panelBg = theme.stone100;
+  const ink3 = theme.textColorMuted;
+  const bg = theme.stone50;
+
+  const COL_HEAD: React.CSSProperties = {
+    fontFamily: MONO,
+    fontSize: 9.5,
+    fontWeight: 600,
+    color: ink3,
+    letterSpacing: "0.08em",
+    padding: "8px 12px",
+    textAlign: "left" as const,
+    borderBottom: `1px solid ${border}`,
+    background: panelBg,
+    whiteSpace: "nowrap" as const,
+    userSelect: "none" as const,
+  };
+
+  return (
+    <div style={{ background: bg, overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
+        <thead>
+          <tr>
+            <th style={COL_HEAD}>ID</th>
+            <th style={{ ...COL_HEAD, width: 24 }}></th>
+            <th style={COL_HEAD}>NAVN</th>
+            <th style={COL_HEAD}>FOTOGRAF</th>
+            <th style={COL_HEAD}>TYPE</th>
+            <th style={COL_HEAD}>LOKASJON</th>
+            <th style={COL_HEAD}>FRIST</th>
+            <th style={{ ...COL_HEAD, width: 24 }}></th>
+          </tr>
+        </thead>
+        <tbody>
+          {jobs.map((job, i) => (
+            <TableRow
+              key={job.id}
+              job={job}
+              onSelectJob={onSelectJob}
+              theme={theme}
+              stripe={i % 2 === 1}
+            />
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
